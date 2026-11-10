@@ -1,4 +1,4 @@
-Este proyecto partió el año 2006, inicialmente por el módulo de Corrspondencia, el que era un módulo para poder implementar el seguimiento de correspondencia en la oficina de OIRS, como funcionario público de Chile, antes existía un repositorio llamado Gobforge.cl,ya desaparecido.
+Este proyecto partió el año 2006, inicialmente por el módulo de Correspondencia, el que era un módulo para poder implementar el seguimiento de correspondencia en la oficina de OIRS, como funcionario público de Chile, antes existía un repositorio llamado Gobforge.cl,ya desaparecido.
 
 Los módulos que ahí se encontraban eran;
 - Adquisiciones
