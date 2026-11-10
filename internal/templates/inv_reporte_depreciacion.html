@@ -1,0 +1,51 @@
+{{define "content"}}
+<h1 class="text-2xl font-bold text-slate-900 mb-6">Listado de Bienes Depreciados</h1>
+
+<form method="get" action="/inventario/reportes/depreciacion" class="mb-6 bg-white p-4 border border-gray-200 rounded-lg flex items-end space-x-4">
+    <div class="flex-1">
+        <label class="block text-xs font-medium text-gray-700 mb-1">Tipo de Bien</label>
+        <select name="tipo" class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm">
+            <option value="0">-- Todos --</option>
+            {{range .TiposBien}}
+            <option value="{{.CorrTbien}}" {{if eq .CorrTbien $.TipoID}}selected{{end}}>{{.Descripcion}}</option>
+            {{end}}
+        </select>
+    </div>
+    <div class="flex-1">
+        <label class="block text-xs font-medium text-gray-700 mb-1">Código (parcial)</label>
+        <input type="text" name="codigo" value="{{.Codigo}}" class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm" placeholder="Ej: 01-">
+    </div>
+    <button type="submit" class="px-4 py-1.5 bg-slate-800 text-white rounded text-sm hover:bg-slate-900">Filtrar</button>
+</form>
+
+<div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200 text-sm">
+        <thead class="bg-slate-50">
+            <tr>
+                <th class="px-4 py-3 text-left font-semibold text-slate-700">Código</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-700">Descripción</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-700">Tipo</th>
+                <th class="px-4 py-3 text-right font-semibold text-slate-700">Monto Original</th>
+                <th class="px-4 py-3 text-right font-semibold text-slate-700">Acción</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {{range .Bienes}}
+            <tr>
+                <td class="px-4 py-3 font-mono text-xs font-medium text-blue-700">{{.CodigoBien}}</td>
+                <td class="px-4 py-3 text-gray-800">{{.Descripcion}}</td>
+                <td class="px-4 py-3 text-gray-600">{{.TipoBien}}</td>
+                <td class="px-4 py-3 text-right font-medium">{{money .Monto}}</td>
+                <td class="px-4 py-3 text-right">
+                    <a href="/inventario/reportes/depreciacion/detalle?bien={{.CorrBien}}" class="text-blue-600 hover:underline font-medium">Ver Tabla</a>
+                </td>
+            </tr>
+            {{else}}
+            <tr>
+                <td colspan="5" class="px-4 py-8 text-center text-gray-500">No se encontraron bienes con depreciación calculada.</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+{{end}}

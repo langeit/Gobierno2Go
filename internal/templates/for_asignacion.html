@@ -1,0 +1,40 @@
+{{define "content"}}
+<h1 class="text-2xl font-bold text-slate-900 mb-1">Asignación de Feriados y Facultativos</h1>
+<p class="text-gray-600 text-sm mb-6">Actualice los días anuales y administrativos de cada empleado para el año {{.Anho}}.</p>
+
+<form method="post" action="/formularios/admin/asignacion" class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-x-auto">
+    <table class="min-w-full text-sm">
+        <thead class="bg-slate-100 text-slate-600">
+            <tr>
+                <th class="text-left px-4 py-3">Empleado</th>
+                <th class="text-left px-4 py-3">Departamento</th>
+                <th class="text-right px-4 py-3">Días feriado anual</th>
+                <th class="text-right px-4 py-3">Días administrativos</th>
+                <th class="text-right px-4 py-3">Usados feriado</th>
+                <th class="text-right px-4 py-3">Usados admin.</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {{range .Empleados}}
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3">{{.Nombre}}</td>
+                <td class="px-4 py-3 text-gray-600">{{.DeptoNombre}}</td>
+                <td class="px-4 py-3 text-right">
+                    <input type="number" step="0.5" min="0" name="feriados_{{.IDEmpleado}}" value="{{printf "%.1f" .FeriadosAnuales}}" class="w-24 border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-right">
+                </td>
+                <td class="px-4 py-3 text-right">
+                    <input type="number" step="0.5" min="0" name="administrativos_{{.IDEmpleado}}" value="{{printf "%.1f" .Administrativos}}" class="w-24 border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-right">
+                </td>
+                <td class="px-4 py-3 text-right text-gray-600">{{printf "%.1f" .FeriadosUsados}}</td>
+                <td class="px-4 py-3 text-right text-gray-600">{{printf "%.1f" .AdminUsados}}</td>
+            </tr>
+            {{else}}
+            <tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">No hay empleados registrados.</td></tr>
+            {{end}}
+        </tbody>
+    </table>
+    <div class="p-4 border-t border-gray-100">
+        <button type="submit" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg">Guardar cambios</button>
+    </div>
+</form>
+{{end}}

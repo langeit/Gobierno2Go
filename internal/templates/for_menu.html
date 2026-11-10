@@ -1,0 +1,58 @@
+{{define "content"}}
+<h1 class="text-2xl font-bold text-slate-900 mb-1">Formularios de la Subsecretaría</h1>
+<p class="text-gray-600 text-sm mb-8">Solicitudes de feriado legal, días administrativos y acumulación de feriados.</p>
+
+{{if .Empleado}}
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+        <p class="text-xs uppercase tracking-wide text-gray-500">Feriados disponibles</p>
+        <p class="text-3xl font-bold text-blue-700 mt-1">{{printf "%.1f" .Empleado.FeriadosRestantes}}</p>
+        <p class="text-xs text-gray-400 mt-1">de {{printf "%.1f" .Empleado.FeriadosAnuales}} días anuales</p>
+    </div>
+    <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+        <p class="text-xs uppercase tracking-wide text-gray-500">Administrativos disponibles</p>
+        <p class="text-3xl font-bold text-emerald-700 mt-1">{{printf "%.1f" .Empleado.AdminRestantes}}</p>
+        <p class="text-xs text-gray-400 mt-1">de {{printf "%.1f" .Empleado.Administrativos}} días anuales</p>
+    </div>
+    <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+        <p class="text-xs uppercase tracking-wide text-gray-500">Días acumulados</p>
+        <p class="text-3xl font-bold text-amber-600 mt-1">{{printf "%.0f" .Empleado.Acumulados}}</p>
+        <p class="text-xs text-gray-400 mt-1">aprobados por Personal</p>
+    </div>
+    <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+        <p class="text-xs uppercase tracking-wide text-gray-500">Pendientes de aprobación</p>
+        <p class="text-3xl font-bold text-slate-900 mt-1">{{.PendientesAprobacion}}</p>
+        <p class="text-xs text-gray-400 mt-1">solicitudes por resolver</p>
+    </div>
+</div>
+{{end}}
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <a href="/formularios/feriado" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+        <h2 class="text-lg font-semibold text-blue-700 mb-1">Solicitud de Feriado Legal</h2>
+        <p class="text-xs text-gray-500">Registrar una solicitud de vacaciones para el usuario actual.</p>
+    </a>
+    <a href="/formularios/administrativo" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+        <h2 class="text-lg font-semibold text-blue-700 mb-1">Día Administrativo</h2>
+        <p class="text-xs text-gray-500">Solicitar un permiso administrativo o facultativo.</p>
+    </a>
+    <a href="/formularios/acumulacion" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+        <h2 class="text-lg font-semibold text-blue-700 mb-1">Acumulación de Feriado</h2>
+        <p class="text-xs text-gray-500">Solicitar acumular días de una solicitud ya aprobada.</p>
+    </a>
+    <a href="/formularios/listado" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+        <h2 class="text-lg font-semibold text-blue-700 mb-1">Listado de Solicitudes</h2>
+        <p class="text-xs text-gray-500">Consultar feriados y permisos registrados.</p>
+    </a>
+    <a href="/formularios/aprobaciones" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+        <h2 class="text-lg font-semibold text-blue-700 mb-1">Aprobaciones</h2>
+        <p class="text-xs text-gray-500">Aprobar o rechazar solicitudes pendientes de su departamento.</p>
+    </a>
+    {{if or .PuedeAdmin (and .User (.User.Puede "administracion"))}}
+    <a href="/formularios/admin" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+        <h2 class="text-lg font-semibold text-blue-700 mb-1">Administración</h2>
+        <p class="text-xs text-gray-500">Asignar días anuales, facultativos y configurar jefes.</p>
+    </a>
+    {{end}}
+</div>
+{{end}}

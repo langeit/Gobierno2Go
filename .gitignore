@@ -1,0 +1,25 @@
+# Binario de la API (make build)
+/bin/
+
+# Compilación de Go
+*.exe
+*.test
+*.out
+coverage.out
+coverage.html
+
+# Secretos locales
+.env
+.env.*
+!.env.example
+
+# Editor y sistema
+.idea/
+.vscode/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+
+# Configuración de Gemini CLI
+GEMINI.md

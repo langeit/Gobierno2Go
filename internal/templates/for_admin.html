@@ -1,0 +1,31 @@
+{{define "content"}}
+<h1 class="text-2xl font-bold text-slate-900 mb-1">Administración de Formularios</h1>
+<p class="text-gray-600 text-sm mb-8">Opciones reservadas para la Oficina de Personal y administradores.</p>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <a href="/formularios/admin/trabajadores" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+        <h2 class="text-lg font-semibold text-blue-700 mb-1">Mantenedor de Trabajadores</h2>
+        <p class="text-xs text-gray-500">Crear, editar y gestionar funcionarios y personal del directorio.</p>
+    </a>
+    <a href="/formularios/admin/departamentos" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+        <h2 class="text-lg font-semibold text-blue-700 mb-1">Mantenedor de Departamentos</h2>
+        <p class="text-xs text-gray-500">Crear, editar y gestionar los departamentos de la institución.</p>
+    </a>
+    <a href="/formularios/admin/asignacion" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+        <h2 class="text-lg font-semibold text-blue-700 mb-1">Asignación de Feriados y Facultativos</h2>
+        <p class="text-xs text-gray-500">Definir los días anuales y administrativos disponibles por empleado.</p>
+    </a>
+    <a href="/formularios/admin/jefes" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+        <h2 class="text-lg font-semibold text-blue-700 mb-1">Configuración de Jefes de Departamento</h2>
+        <p class="text-xs text-gray-500">Asignar jefe directo y aprobador de cada departamento.</p>
+    </a>
+    <a href="/formularios/personal/feriado" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+        <h2 class="text-lg font-semibold text-blue-700 mb-1">Registro de Feriados (Personal)</h2>
+        <p class="text-xs text-gray-500">Registrar feriados legales para cualquier empleado.</p>
+    </a>
+    <a href="/formularios/personal/administrativo" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+        <h2 class="text-lg font-semibold text-blue-700 mb-1">Registro de Facultativos (Personal)</h2>
+        <p class="text-xs text-gray-500">Registrar permisos administrativos para cualquier empleado.</p>
+    </a>
+</div>
+{{end}}

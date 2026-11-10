@@ -1,0 +1,56 @@
+{{define "content"}}
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold text-slate-900">Listado de Bienes</h1>
+    <a href="/inventario/ingreso" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition">+ Ingresar Bien</a>
+</div>
+
+<form method="get" action="/inventario/bienes" class="mb-6 bg-white p-4 border border-gray-200 rounded-lg flex items-center space-x-4">
+    <label class="text-sm font-medium text-gray-700">Filtrar por Tipo:</label>
+    <select name="tipo" class="border border-gray-300 rounded px-3 py-1.5 text-sm focus:ring-blue-500 focus:border-blue-500">
+        <option value="0">-- Todos los tipos --</option>
+        {{range .TiposBien}}
+        <option value="{{.CorrTbien}}" {{if eq .CorrTbien $.TipoFiltro}}selected{{end}}>{{.Descripcion}}</option>
+        {{end}}
+    </select>
+    <button type="submit" class="px-4 py-1.5 bg-slate-800 text-white rounded text-sm hover:bg-slate-900">Filtrar</button>
+</form>
+
+<div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200 text-sm">
+        <thead class="bg-slate-50">
+            <tr>
+                <th class="px-4 py-3 text-left font-semibold text-slate-700">Código</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-700">Descripción</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-700">Tipo</th>
+                <th class="px-4 py-3 text-right font-semibold text-slate-700">Monto</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-700">Estado</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-700">Ubicación</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-700">Responsables</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {{range .Bienes}}
+            <tr class="hover:bg-slate-50 transition">
+                <td class="px-4 py-3 font-mono text-xs font-medium text-blue-700">{{.CodigoBien}}</td>
+                <td class="px-4 py-3 text-gray-800">{{.Descripcion}}</td>
+                <td class="px-4 py-3 text-gray-600">{{.TipoBien}}</td>
+                <td class="px-4 py-3 text-right font-medium">{{money .Monto}}</td>
+                <td class="px-4 py-3">
+                    <span class="px-2 py-0.5 rounded-full text-xs font-medium {{if eq .Estado "BU"}}bg-green-100 text-green-800{{else if eq .Estado "BD"}}bg-yellow-100 text-yellow-800{{else}}bg-red-100 text-red-800{{end}}">
+                        {{.EstadoNombre}}
+                    </span>
+                </td>
+                <td class="px-4 py-3 text-gray-600">
+                    {{if .Zona}}{{.Zona}} - Piso {{.Piso}} - Of. {{.Oficina}}{{else}}Sin asignar{{end}}
+                </td>
+                <td class="px-4 py-3 text-gray-600 text-xs">{{if .Responsables}}{{.Responsables}}{{else}}Sin asignar{{end}}</td>
+            </tr>
+            {{else}}
+            <tr>
+                <td colspan="7" class="px-4 py-8 text-center text-gray-500">No se encontraron bienes registrados.</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+{{end}}

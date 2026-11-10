@@ -1,0 +1,26 @@
+{{define "content"}}
+<h1 class="text-2xl font-bold text-slate-900 mb-6">Reportes de Inventario</h1>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <a href="/inventario/reportes/responsable" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+        <h2 class="text-lg font-semibold text-blue-700 mb-1">Por Responsable</h2>
+        <p class="text-xs text-gray-500">Listado de bienes asignados a un funcionario específico.</p>
+    </a>
+    <a href="/inventario/reportes/ubicacion" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+        <h2 class="text-lg font-semibold text-blue-700 mb-1">Por Ubicación</h2>
+        <p class="text-xs text-gray-500">Bienes filtrados por zona, piso y oficina.</p>
+    </a>
+    <a href="/inventario/reportes/anio" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+        <h2 class="text-lg font-semibold text-blue-700 mb-1">Adquiridos en el Año</h2>
+        <p class="text-xs text-gray-500">Bienes ingresados durante un año calendario específico.</p>
+    </a>
+    <a href="/inventario/reportes/movimientos" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+        <h2 class="text-lg font-semibold text-blue-700 mb-1">Movimientos</h2>
+        <p class="text-xs text-gray-500">Historial de ingresos, traslados y bajas de bienes.</p>
+    </a>
+    <a href="/inventario/reportes/depreciacion" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+        <h2 class="text-lg font-semibold text-blue-700 mb-1">Depreciación</h2>
+        <p class="text-xs text-gray-500">Tabla de depreciación y valor libro de los bienes.</p>
+    </a>
+</div>
+{{end}}

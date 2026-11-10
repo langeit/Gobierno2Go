@@ -1,0 +1,46 @@
+{{define "content"}}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-slate-900 mb-1">Entrega de materiales</h1>
+    <p class="text-gray-600 text-sm">La cantidad entregada descuenta el stock por lote de valor unitario, del más antiguo al más nuevo, y cierra la solicitud.</p>
+</div>
+{{with .Solicitud}}
+{{if and (eq .Estado 5) (eq .VistoBueno "S")}}
+<form method="post" action="/adquisiciones/solicitudes/{{.Numero}}/entregar" class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-x-auto">
+    <div class="p-4 text-sm text-gray-700">Solicitud {{.Numero}} · {{.Departamento}} · aprobada el {{.FechaAprueba}}</div>
+    <table class="min-w-full text-sm">
+        <thead class="bg-slate-100 text-slate-600">
+            <tr>
+                <th class="text-left px-3 py-2">Material</th>
+                <th class="text-right px-3 py-2">Solicitada</th>
+                <th class="text-right px-3 py-2">Stock</th>
+                <th class="text-right px-3 py-2">Promedio mensual</th>
+                <th class="text-right px-3 py-2">Año</th>
+                <th class="text-right px-3 py-2">Mes anterior</th>
+                <th class="text-right px-3 py-2">A entregar</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {{range $.Entregas}}
+            <tr>
+                <td class="px-3 py-2">{{.Nombre}}</td>
+                <td class="px-3 py-2 text-right">{{.Solicitada}}</td>
+                <td class="px-3 py-2 text-right">{{.Stock}}</td>
+                <td class="px-3 py-2 text-right">{{.Promedio}}</td>
+                <td class="px-3 py-2 text-right">{{.EntregaAnio}}</td>
+                <td class="px-3 py-2 text-right">{{.EntregaMesAnt}}</td>
+                <td class="px-3 py-2 text-right"><input name="entregada_{{.Correlativo}}" type="number" min="0" value="{{.Solicitada}}" class="w-24 border border-gray-300 rounded px-2 py-1 text-sm text-right"></td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+    <div class="p-4 flex gap-3">
+        <button type="submit" class="px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg">Registrar entrega</button>
+        <a href="/adquisiciones/solicitudes/{{.Numero}}" class="px-4 py-2.5 bg-gray-100 text-sm font-semibold rounded-lg">Volver</a>
+    </div>
+</form>
+{{else}}
+<p class="text-sm text-gray-600">Esta solicitud no está aprobada para entrega. Estado: {{.EstadoNombre}}.</p>
+<p class="mt-4"><a href="/adquisiciones/solicitudes/{{.Numero}}" class="text-sm text-blue-700 hover:underline">Ver la solicitud</a></p>
+{{end}}
+{{end}}
+{{end}}

@@ -1,0 +1,31 @@
+{{define "content"}}
+<h1 class="text-2xl font-bold text-slate-900 mb-6">Cambio de Estado</h1>
+
+<form method="post" action="/inventario/estado" class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm max-w-2xl">
+    <div class="space-y-4">
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Seleccionar Bien</label>
+            <select name="corr_bien" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500" required>
+                <option value="">-- Seleccione un bien --</option>
+                {{range .Bienes}}
+                <option value="{{.CorrBien}}">{{.CodigoBien}} - {{.Descripcion}} (Estado actual: {{.EstadoNombre}})</option>
+                {{end}}
+            </select>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Nuevo Estado</label>
+            <select name="estado" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500" required>
+                <option value="BU">Bueno en uso (BU)</option>
+                <option value="BD">Bueno en desuso (BD)</option>
+                <option value="MR">Malo recuperable (MR)</option>
+                <option value="MI">Malo irrecuperable (MI)</option>
+            </select>
+        </div>
+
+        <div class="pt-4 flex justify-end">
+            <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition">Actualizar Estado</button>
+        </div>
+    </div>
+</form>
+{{end}}

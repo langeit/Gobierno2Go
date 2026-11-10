@@ -1,0 +1,76 @@
+{{define "content"}}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-slate-900 mb-1">{{.Title}}</h1>
+    <p class="text-gray-600 text-sm">{{.Bajada}}</p>
+</div>
+<form method="get" class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm mb-6 flex flex-wrap gap-3 items-end">
+    {{if .MuestraDepto}}
+    <div>
+        <label class="block text-xs font-medium text-gray-700 mb-1">Departamento</label>
+        <select name="depto" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+            <option value="0">Todos</option>
+            {{range .Departamentos}}<option value="{{.IDDepto}}" {{if eq .IDDepto $.Filtro.Depto}}selected{{end}}>{{.Descripcion}}</option>{{end}}
+        </select>
+    </div>
+    {{end}}
+    {{if .MuestraTipo}}
+    <div>
+        <label class="block text-xs font-medium text-gray-700 mb-1">Tipo de material</label>
+        <select name="tipo" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" onchange="this.form.submit()">
+            <option value="0">Todos</option>
+            {{range .Tipos}}<option value="{{.Codigo}}" {{if eq .Codigo $.Filtro.Tipo}}selected{{end}}>{{.Descripcion}}</option>{{end}}
+        </select>
+    </div>
+    {{end}}
+    {{if .MuestraMaterial}}
+    <div>
+        <label class="block text-xs font-medium text-gray-700 mb-1">Material</label>
+        <select name="material" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+            <option value="0">Todos</option>
+            {{range .Materiales}}<option value="{{.Codigo}}" {{if eq .Codigo $.Filtro.Material}}selected{{end}}>{{.Nombre}}</option>{{end}}
+        </select>
+    </div>
+    {{end}}
+    {{if .MuestraFechas}}
+    <div><label class="block text-xs font-medium text-gray-700 mb-1">Desde</label><input type="date" name="fecha1" value="{{.Filtro.Fecha1}}" class="border border-gray-300 rounded-lg px-3 py-2 text-sm"></div>
+    <div><label class="block text-xs font-medium text-gray-700 mb-1">Hasta</label><input type="date" name="fecha2" value="{{.Filtro.Fecha2}}" class="border border-gray-300 rounded-lg px-3 py-2 text-sm"></div>
+    {{end}}
+    {{if .MuestraFechaCorte}}
+    <div><label class="block text-xs font-medium text-gray-700 mb-1">Fecha de corte</label><input type="date" name="fecha" value="{{.Filtro.FechaCorte}}" required class="border border-gray-300 rounded-lg px-3 py-2 text-sm"></div>
+    {{end}}
+    {{if .MuestraAnioMes}}
+    <div><label class="block text-xs font-medium text-gray-700 mb-1">Año</label><input type="number" name="anio" min="1990" value="{{.Filtro.Anio}}" class="w-28 border border-gray-300 rounded-lg px-3 py-2 text-sm"></div>
+    <div>
+        <label class="block text-xs font-medium text-gray-700 mb-1">Mes</label>
+        <select name="mes" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+            {{range $m := .Meses}}<option value="{{$m}}" {{if eq $m $.Filtro.Mes}}selected{{end}}>{{$m}}</option>{{end}}
+        </select>
+    </div>
+    {{end}}
+    {{if .MuestraUmbral}}
+    <label class="text-sm flex items-center gap-2"><input type="radio" name="opcion" value="C" {{if .Filtro.UsaCritico}}checked{{end}}> Stock crítico</label>
+    <label class="text-sm flex items-center gap-2"><input type="radio" name="opcion" value="D" {{if not .Filtro.UsaCritico}}checked{{end}}> Hasta</label>
+    <input type="number" name="umbral" min="0" value="{{.Filtro.Umbral}}" class="w-24 border border-gray-300 rounded-lg px-3 py-2 text-sm">
+    {{end}}
+    <button type="submit" class="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg">Consultar</button>
+</form>
+
+{{if .Consultado}}
+<div class="flex justify-end mb-3">
+    <a href="?{{.Consulta}}{{if .Consulta}}&{{end}}formato=csv" class="text-sm text-blue-700 hover:underline">Exportar CSV</a>
+</div>
+<div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-x-auto">
+    <table class="min-w-full text-sm">
+        <thead class="bg-slate-100 text-slate-600"><tr>{{range .Columnas}}<th class="text-left px-3 py-2">{{.}}</th>{{end}}</tr></thead>
+        <tbody class="divide-y divide-gray-100">
+            {{range .Filas}}
+            <tr>{{range .}}<td class="px-3 py-2">{{.}}</td>{{end}}</tr>
+            {{else}}
+            <tr><td class="px-3 py-10 text-center text-gray-500" colspan="8">No hay movimientos para ese filtro.</td></tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+{{end}}
+<p class="mt-6"><a href="/adquisiciones/reportes" class="text-sm text-blue-700 hover:underline">Volver a reportes</a></p>
+{{end}}

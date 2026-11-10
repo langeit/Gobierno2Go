@@ -1,0 +1,31 @@
+{{define "content"}}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-slate-900 mb-1">{{.Title}}</h1>
+</div>
+{{with .Solicitud}}
+<div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm space-y-5">
+    <dl class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+        <div><dt class="text-xs text-gray-500">Número</dt><dd class="font-medium">{{.Numero}}</dd></div>
+        <div><dt class="text-xs text-gray-500">Estado</dt><dd>{{.EstadoNombre}}</dd></div>
+        <div><dt class="text-xs text-gray-500">Fecha</dt><dd>{{.Fecha}} {{.Hora}}</dd></div>
+        <div><dt class="text-xs text-gray-500">Departamento</dt><dd>{{.Departamento}}</dd></div>
+        <div><dt class="text-xs text-gray-500">Solicitante</dt><dd>{{.Usuario}}</dd></div>
+        <div><dt class="text-xs text-gray-500">Visto bueno</dt><dd>{{if eq .VistoBueno "S"}}Sí{{else if eq .VistoBueno "N"}}No{{else}}—{{end}}</dd></div>
+        <div><dt class="text-xs text-gray-500">Fecha de resolución</dt><dd>{{if .FechaAprueba}}{{.FechaAprueba}}{{else}}—{{end}}</dd></div>
+    </dl>
+    <table class="min-w-full text-sm">
+        <thead class="bg-slate-100 text-slate-600"><tr><th class="text-left px-3 py-2">Material</th><th class="text-right px-3 py-2">Solicitada</th><th class="text-right px-3 py-2">Autorizada</th><th class="text-right px-3 py-2">Despachada</th></tr></thead>
+        <tbody class="divide-y divide-gray-100">
+            {{range .Lineas}}
+            <tr><td class="px-3 py-2">{{.Nombre}}</td><td class="px-3 py-2 text-right">{{.Cantidad}}</td><td class="px-3 py-2 text-right">{{.CantidadAutorizada}}</td><td class="px-3 py-2 text-right">{{.CantidadDespachada}}</td></tr>
+            {{end}}
+        </tbody>
+    </table>
+    <div class="flex flex-wrap gap-3">
+        {{if eq .Estado 25}}<a href="/adquisiciones/solicitudes/{{.Numero}}/aprobar" class="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg">Aprobar o rechazar</a>{{end}}
+        {{if and (eq .Estado 5) (eq .VistoBueno "S")}}<a href="/adquisiciones/solicitudes/{{.Numero}}/entregar" class="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg">Registrar entrega</a>{{end}}
+        <a href="/adquisiciones/solicitudes" class="px-4 py-2 bg-gray-100 text-sm font-semibold rounded-lg">Volver</a>
+    </div>
+</div>
+{{end}}
+{{end}}

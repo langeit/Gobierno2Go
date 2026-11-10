@@ -1,0 +1,40 @@
+{{define "content"}}
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h1 class="text-2xl font-bold text-slate-900 mb-1">Dominios</h1>
+        <p class="text-gray-600 text-sm">Valores de cada tipo: materiales, regiones, estados de solicitud y otros.</p>
+    </div>
+    <a href="/adquisiciones/mantenedores/dominios/nuevo" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-sm transition">+ Agregar</a>
+</div>
+
+<div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-x-auto">
+    <table class="min-w-full text-sm">
+        <thead class="bg-slate-100 text-slate-600">
+            <tr>
+                <th class="text-left px-4 py-3 font-semibold">Código</th>
+                <th class="text-left px-4 py-3 font-semibold">Tipo de dominio</th>
+                <th class="text-left px-4 py-3 font-semibold">Descripción</th>
+                <th class="text-right px-4 py-3 font-semibold">Acciones</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {{range .Dominios}}
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3 font-mono text-xs text-gray-500">{{.Codigo}}</td>
+                <td class="px-4 py-3 text-slate-700">{{.TipoDescripcion}}</td>
+                <td class="px-4 py-3 font-medium text-slate-900">{{.Descripcion}}</td>
+                <td class="px-4 py-3 text-right space-x-2 whitespace-nowrap">
+                    <a href="/adquisiciones/mantenedores/dominios/{{.Codigo}}" class="inline-flex px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-slate-700 text-xs font-medium rounded">Ver</a>
+                    <a href="/adquisiciones/mantenedores/dominios/{{.Codigo}}/editar" class="inline-flex px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-slate-700 text-xs font-medium rounded">Modificar</a>
+                    <form method="post" action="/adquisiciones/mantenedores/dominios/{{.Codigo}}/eliminar" class="inline" onsubmit="return confirm('¿Eliminar este dominio?');">
+                        <button type="submit" class="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-medium rounded">Eliminar</button>
+                    </form>
+                </td>
+            </tr>
+            {{else}}
+            <tr><td colspan="4" class="px-4 py-12 text-center text-gray-500">No hay dominios.</td></tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+{{end}}

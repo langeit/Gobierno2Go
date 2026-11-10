@@ -1,0 +1,45 @@
+{{define "content"}}
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h1 class="text-2xl font-bold text-slate-900 mb-1">Mantenedor de Departamentos</h1>
+        <p class="text-gray-600 text-sm">Gestión de las unidades y departamentos de la institución.</p>
+    </div>
+    <a href="/formularios/admin/departamentos/nuevo" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-sm transition">
+        + Nuevo Departamento
+    </a>
+</div>
+
+<div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+    <table class="min-w-full text-sm">
+        <thead class="bg-slate-100 text-slate-600">
+            <tr>
+                <th class="text-left px-4 py-3 font-semibold">ID</th>
+                <th class="text-left px-4 py-3 font-semibold">Descripción</th>
+                <th class="text-right px-4 py-3 font-semibold">Acciones</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {{range .Departamentos}}
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3 text-gray-500 font-mono text-xs">{{.IDDepto}}</td>
+                <td class="px-4 py-3 font-medium text-slate-900">{{.Descripcion}}</td>
+                <td class="px-4 py-3 text-right space-x-2">
+                    <a href="/formularios/admin/departamentos/{{.IDDepto}}" class="inline-flex items-center px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-slate-700 text-xs font-medium rounded">Editar</a>
+                    <form method="post" action="/formularios/admin/departamentos/{{.IDDepto}}/eliminar" class="inline" onsubmit="return confirm('¿Está seguro de eliminar este departamento?');">
+                        <button type="submit" class="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-medium rounded">Eliminar</button>
+                    </form>
+                </td>
+            </tr>
+            {{else}}
+            <tr>
+                <td colspan="3" class="px-4 py-12 text-center text-gray-500">No hay departamentos registrados.</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+
+<div class="mt-6">
+    <a href="/formularios/admin" class="text-sm font-semibold text-blue-600 hover:text-blue-800">← Volver a administración de formularios</a>
+</div>
+{{end}}

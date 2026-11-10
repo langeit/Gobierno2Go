@@ -1,0 +1,40 @@
+{{define "content"}}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-slate-900 mb-1">{{.Title}}</h1>
+    <p class="text-gray-600 text-sm">Factura ingresada y su detalle de materiales.</p>
+</div>
+{{with .Factura}}
+<div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm space-y-5">
+    <dl class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+        <div><dt class="text-xs text-gray-500">Factura</dt><dd class="font-medium">{{.NroFactura}}</dd></div>
+        <div><dt class="text-xs text-gray-500">Fecha factura</dt><dd>{{.FechaFactura}}</dd></div>
+        <div><dt class="text-xs text-gray-500">Ingreso</dt><dd>{{.FechaIngreso}}</dd></div>
+        <div><dt class="text-xs text-gray-500">Orden</dt><dd><a class="text-blue-700 hover:underline" href="/adquisiciones/ordenes/{{.NroOrden}}">{{.NroOrden}}</a></dd></div>
+        <div><dt class="text-xs text-gray-500">Proveedor</dt><dd>{{.Proveedor}}</dd></div>
+        <div><dt class="text-xs text-gray-500">Modo</dt><dd>{{.ModoNombre}}</dd></div>
+        <div><dt class="text-xs text-gray-500">Impuesto</dt><dd>{{.ImpuestoNombre}}%</dd></div>
+        <div><dt class="text-xs text-gray-500">Neto</dt><dd>{{money .Total}}</dd></div>
+        <div><dt class="text-xs text-gray-500">IVA</dt><dd>{{money .IVA}}</dd></div>
+        <div><dt class="text-xs text-gray-500">Total</dt><dd class="font-semibold">{{money .TotalFinal}}</dd></div>
+    </dl>
+    {{if .DescServicio}}
+    <div>
+        <h2 class="text-sm font-semibold mb-1">Servicio</h2>
+        <p class="text-sm whitespace-pre-wrap">{{.DescServicio}}</p>
+        <p class="text-sm text-gray-600">Cantidad {{printf "%.2f" .CantServicio}} · Valor unitario {{money .ValorUnitServicio}}</p>
+    </div>
+    {{end}}
+    <table class="min-w-full text-sm">
+        <thead class="bg-slate-100 text-slate-600"><tr><th class="text-left px-3 py-2">Material</th><th class="text-right px-3 py-2">Cantidad</th><th class="text-right px-3 py-2">Valor</th><th class="text-right px-3 py-2">Total</th></tr></thead>
+        <tbody class="divide-y divide-gray-100">
+            {{range .Lineas}}
+            <tr><td class="px-3 py-2">{{.Nombre}}</td><td class="px-3 py-2 text-right">{{.Cantidad}}</td><td class="px-3 py-2 text-right">{{.ValorUnitario}}</td><td class="px-3 py-2 text-right">{{.ValorTotal}}</td></tr>
+            {{else}}
+            <tr><td colspan="4" class="px-3 py-6 text-center text-gray-500">Sin materiales en esta factura.</td></tr>
+            {{end}}
+        </tbody>
+    </table>
+    <a href="/adquisiciones/facturas" class="inline-block px-4 py-2 bg-gray-100 hover:bg-gray-200 text-slate-700 text-sm font-semibold rounded-lg">Volver al listado</a>
+</div>
+{{end}}
+{{end}}

@@ -1,0 +1,43 @@
+{{define "content"}}
+<h1 class="text-2xl font-bold text-slate-900">Consulta de Documentos</h1>
+<p class="text-gray-600 text-sm mt-1 mb-6">Busque por correlativo, referencia, número, notas u origen.</p>
+
+<form method="get" action="/correspondencia/consulta" class="flex gap-2 mb-6">
+    <input type="text" name="q" value="{{.Q}}" placeholder="Texto a buscar..." class="flex-1 px-4 py-2 border rounded-lg text-sm">
+    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition">Buscar</button>
+</form>
+
+<div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+    <div class="px-4 py-3 border-b border-gray-200 font-semibold text-slate-800">Resultados: {{.Total}}</div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+            <thead class="bg-gray-100 text-gray-700">
+                <tr>
+                    <th class="py-3 px-4">Correlativo</th>
+                    <th class="py-3 px-4">Tipo</th>
+                    <th class="py-3 px-4">Origen</th>
+                    <th class="py-3 px-4">Número</th>
+                    <th class="py-3 px-4">Fecha</th>
+                    <th class="py-3 px-4">Referencia</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .Docs}}
+                <tr class="border-t border-gray-100 hover:bg-gray-50">
+                    <td class="py-3 px-4 font-mono font-semibold text-blue-700">
+                        <a href="/correspondencia/ficha?barra={{.Barra}}" class="hover:underline">{{.Barra}}</a>
+                    </td>
+                    <td class="py-3 px-4">{{.TipoDesc}}</td>
+                    <td class="py-3 px-4">{{.OrigenDesc}}</td>
+                    <td class="py-3 px-4">{{if .Numero}}{{.Numero}}{{else}}—{{end}}</td>
+                    <td class="py-3 px-4">{{.FechCreacion}}</td>
+                    <td class="py-3 px-4 text-gray-600">{{.Referencia}}</td>
+                </tr>
+                {{else}}
+                <tr><td colspan="6" class="py-8 px-4 text-center text-gray-500">Sin resultados.</td></tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+</div>
+{{end}}

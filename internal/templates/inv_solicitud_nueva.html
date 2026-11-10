@@ -1,0 +1,59 @@
+{{define "content"}}
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold text-slate-900">Nueva Solicitud de Inventario</h1>
+    <span class="text-sm text-gray-500">Santiago, {{.Fecha}}</span>
+</div>
+
+<form method="post" action="/inventario/solicitudes/nueva" class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm max-w-3xl">
+    <div class="space-y-5">
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de Solicitud</label>
+            <select name="tipo_sol" id="tipo_sol" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500" required onchange="toggleBienes()">
+                <option value="">-- Seleccione --</option>
+                <option value="R">Reparación de bien</option>
+                <option value="D">Devolución por no uso</option>
+                <option value="P">Petición de bien</option>
+            </select>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Descripción de la solicitud</label>
+            <textarea name="descripcion" rows="4" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500" required placeholder="Detalle el motivo de la solicitud..."></textarea>
+        </div>
+
+        <div id="seccion-bienes" class="hidden border-t border-gray-100 pt-5">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Seleccione los bienes involucrados (bajo su responsabilidad)</label>
+            {{if .BienesEmpleado}}
+            <div class="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto border border-gray-200 rounded p-3 bg-slate-50">
+                {{range .BienesEmpleado}}
+                <label class="flex items-center space-x-2 text-sm text-gray-700 cursor-pointer hover:bg-white p-1 rounded transition">
+                    <input type="checkbox" name="bienes[]" value="{{.CorrBien}}" class="rounded text-blue-600 focus:ring-blue-500">
+                    <span class="font-mono text-xs text-blue-700">{{.CodigoBien}}</span>
+                    <span>{{.Descripcion}}</span>
+                </label>
+                {{end}}
+            </div>
+            {{else}}
+            <p class="text-sm text-amber-600 bg-amber-50 p-3 rounded">No tiene bienes asignados bajo su responsabilidad para solicitar reparación o devolución.</p>
+            {{end}}
+        </div>
+
+        <div class="pt-4 flex justify-end space-x-3">
+            <a href="/inventario/solicitudes" class="px-5 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition">Cancelar</a>
+            <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition">Enviar Solicitud</button>
+        </div>
+    </div>
+</form>
+
+<script>
+function toggleBienes() {
+    const tipo = document.getElementById('tipo_sol').value;
+    const seccion = document.getElementById('seccion-bienes');
+    if (tipo === 'R' || tipo === 'D') {
+        seccion.classList.remove('hidden');
+    } else {
+        seccion.classList.add('hidden');
+    }
+}
+</script>
+{{end}}

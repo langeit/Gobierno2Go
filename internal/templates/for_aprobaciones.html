@@ -1,0 +1,88 @@
+{{define "content"}}
+<h1 class="text-2xl font-bold text-slate-900 mb-1">Aprobaciones pendientes</h1>
+<p class="text-gray-600 text-sm mb-6">Solicitudes de su departamento que requieren aprobación o rechazo.</p>
+
+<div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-x-auto mb-8">
+    <table class="min-w-full text-sm">
+        <thead class="bg-slate-100 text-slate-600">
+            <tr>
+                <th class="text-left px-4 py-3">N°</th>
+                <th class="text-left px-4 py-3">Empleado</th>
+                <th class="text-left px-4 py-3">Departamento</th>
+                <th class="text-left px-4 py-3">Tipo</th>
+                <th class="text-right px-4 py-3">Días</th>
+                <th class="text-left px-4 py-3">Inicio</th>
+                <th class="text-left px-4 py-3">Término</th>
+                <th class="text-left px-4 py-3">Resolución</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {{range .Solicitudes}}
+            <tr class="hover:bg-gray-50 align-top">
+                <td class="px-4 py-3 font-mono text-xs">{{.IDDpermiso}}</td>
+                <td class="px-4 py-3">{{.Empleado}}</td>
+                <td class="px-4 py-3 text-gray-600">{{.Depto}}</td>
+                <td class="px-4 py-3">{{.TipoNombre}}</td>
+                <td class="px-4 py-3 text-right">{{printf "%.1f" .DiasTomados}}</td>
+                <td class="px-4 py-3">{{.FechaInicio.Format "02-01-2006"}}</td>
+                <td class="px-4 py-3">{{.FechaFin.Format "02-01-2006"}}</td>
+                <td class="px-4 py-3">
+                    <form method="post" action="/formularios/aprobaciones" class="space-y-2 min-w-[220px]">
+                        <input type="hidden" name="id" value="{{.IDDpermiso}}">
+                        <input type="text" name="motivo_rechazo" placeholder="Motivo del rechazo (opcional)" class="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-xs">
+                        <div class="flex gap-2">
+                            <button type="submit" name="accion" value="aprobar" class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-lg">Aprobar</button>
+                            <button type="submit" name="accion" value="rechazar" class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg">Rechazar</button>
+                        </div>
+                    </form>
+                </td>
+            </tr>
+            {{else}}
+            <tr>
+                <td colspan="8" class="px-4 py-8 text-center text-gray-500">No hay solicitudes pendientes de aprobación.</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+
+{{if or .EsPersonal .PuedeAdmin (and .User (.User.Puede "administracion"))}}
+<h2 class="text-lg font-semibold text-slate-900 mb-3">Acumulaciones pendientes</h2>
+<div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-x-auto">
+    <table class="min-w-full text-sm">
+        <thead class="bg-slate-100 text-slate-600">
+            <tr>
+                <th class="text-left px-4 py-3">N°</th>
+                <th class="text-left px-4 py-3">Empleado</th>
+                <th class="text-left px-4 py-3">Solicitud</th>
+                <th class="text-right px-4 py-3">Días a acumular</th>
+                <th class="text-left px-4 py-3">Fecha</th>
+                <th class="text-left px-4 py-3">Resolución</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {{range .Acumulaciones}}
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3 font-mono text-xs">{{.Correlativo}}</td>
+                <td class="px-4 py-3">{{.Empleado}}</td>
+                <td class="px-4 py-3">#{{.IDDpermiso}} · {{.FechaInicio.Format "02-01-2006"}} al {{.FechaFin.Format "02-01-2006"}}</td>
+                <td class="px-4 py-3 text-right">{{.DiasSol}}</td>
+                <td class="px-4 py-3">{{.FechaSol.Format "02-01-2006"}}</td>
+                <td class="px-4 py-3">
+                    <form method="post" action="/formularios/acumulacion/aprobar" class="flex gap-2">
+                        <input type="hidden" name="correlativo" value="{{.Correlativo}}">
+                        <button type="submit" name="accion" value="aprobar" class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-lg">Aprobar</button>
+                        <button type="submit" name="accion" value="rechazar" class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg">Rechazar</button>
+                    </form>
+                </td>
+            </tr>
+            {{else}}
+            <tr>
+                <td colspan="6" class="px-4 py-8 text-center text-gray-500">No hay acumulaciones pendientes.</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+{{end}}
+{{end}}

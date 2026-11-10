@@ -1,0 +1,56 @@
+{{define "content"}}
+<h1 class="text-2xl font-bold text-slate-900 mb-6">Cambio de Ubicación</h1>
+
+<form method="post" action="/inventario/ubicacion" class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm max-w-2xl">
+    <div class="space-y-4">
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Bien a Trasladar</label>
+            <select name="corr_bien" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500" required>
+                <option value="">-- Seleccione un bien --</option>
+                {{range .Bienes}}
+                <option value="{{.CorrBien}}">{{.CodigoBien}} - {{.Descripcion}} (Actual: {{if .Zona}}{{.Zona}} Piso {{.Piso}} Of. {{.Oficina}}{{else}}Sin ubicación{{end}})</option>
+                {{end}}
+            </select>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Nueva Zona</label>
+                <select name="corr_zona" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500" required>
+                    <option value="">-- Zona --</option>
+                    {{range .Zonas}}
+                    <option value="{{.CorrZona}}">{{.Descripcion}}</option>
+                    {{end}}
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Piso</label>
+                <input type="text" name="piso" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500" required>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Oficina</label>
+                <input type="text" name="oficina" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500" required>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-100">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Documento de Respaldo (Tipo)</label>
+                <select name="tipo_doc" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500">
+                    <option value="ME">Memorándum</option>
+                    <option value="RE">Resolución</option>
+                    <option value="OC">Orden de Compra</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Número de Documento</label>
+                <input type="number" name="num_doc" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500" value="0">
+            </div>
+        </div>
+
+        <div class="pt-4 flex justify-end">
+            <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition">Actualizar Ubicación</button>
+        </div>
+    </div>
+</form>
+{{end}}

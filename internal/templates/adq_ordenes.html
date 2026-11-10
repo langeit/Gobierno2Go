@@ -1,0 +1,45 @@
+{{define "content"}}
+<div class="flex items-center justify-between mb-6 gap-4">
+    <div>
+        <h1 class="text-2xl font-bold text-slate-900 mb-1">Órdenes de compra</h1>
+        <p class="text-gray-600 text-sm">Ingreso de órdenes de materiales o de servicios, y modificación de las que aún tienen líneas sin facturar.</p>
+    </div>
+    <div class="flex gap-2">
+        <a href="/adquisiciones/ordenes/nueva?modo=17" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-sm transition">+ Materiales</a>
+        <a href="/adquisiciones/ordenes/nueva?modo=18" class="px-4 py-2 bg-slate-700 hover:bg-slate-800 text-white text-sm font-semibold rounded-lg shadow-sm transition">+ Servicios</a>
+    </div>
+</div>
+
+<div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-x-auto">
+    <table class="min-w-full text-sm">
+        <thead class="bg-slate-100 text-slate-600">
+            <tr>
+                <th class="text-left px-4 py-3 font-semibold">N°</th>
+                <th class="text-left px-4 py-3 font-semibold">Fecha</th>
+                <th class="text-left px-4 py-3 font-semibold">Tipo</th>
+                <th class="text-left px-4 py-3 font-semibold">Modo</th>
+                <th class="text-left px-4 py-3 font-semibold">Proveedor</th>
+                <th class="text-right px-4 py-3 font-semibold">Total</th>
+                <th class="text-left px-4 py-3 font-semibold">Estado</th>
+                <th class="text-right px-4 py-3 font-semibold">Acciones</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {{range .Ordenes}}
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3 font-mono text-xs">{{.Numero}}</td>
+                <td class="px-4 py-3">{{.Fecha}}</td>
+                <td class="px-4 py-3">{{.TipoNombre}}</td>
+                <td class="px-4 py-3">{{.ModoNombre}}</td>
+                <td class="px-4 py-3">{{.Proveedor}}</td>
+                <td class="px-4 py-3 text-right">{{money .TotalFinal}}</td>
+                <td class="px-4 py-3">{{if .TienePendientes}}<span class="text-amber-700">Con líneas pendientes</span>{{else}}<span class="text-green-700">Facturada</span>{{end}}</td>
+                <td class="px-4 py-3 text-right"><a href="/adquisiciones/ordenes/{{.Numero}}" class="inline-flex px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-slate-700 text-xs font-medium rounded">Ver</a></td>
+            </tr>
+            {{else}}
+            <tr><td colspan="8" class="px-4 py-12 text-center text-gray-500">No hay órdenes de compra.</td></tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+{{end}}

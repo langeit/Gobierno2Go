@@ -1,0 +1,44 @@
+{{define "content"}}
+<div class="flex flex-col md:flex-row md:justify-between md:items-center gap-3 mb-6">
+    <div>
+        <h1 class="text-2xl font-bold text-slate-900">Recepción de Correspondencia</h1>
+        <p class="text-gray-600 text-sm mt-1">Documentos en tránsito hacia usted o su centro.</p>
+    </div>
+    <div class="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-4 py-2 text-sm font-semibold">
+        Pendientes: {{.Total}}
+    </div>
+</div>
+
+<div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+    <table class="w-full text-left text-sm">
+        <thead class="bg-gray-100 text-gray-700">
+            <tr>
+                <th class="py-3 px-4">Correlativo</th>
+                <th class="py-3 px-4">Fecha creación</th>
+                <th class="py-3 px-4">Tipo</th>
+                <th class="py-3 px-4">Referencia</th>
+                <th class="py-3 px-4 text-right">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Pending}}
+            <tr class="border-t border-gray-100 hover:bg-gray-50">
+                <td class="py-3 px-4 font-mono font-semibold text-blue-700">{{.Barra}}</td>
+                <td class="py-3 px-4">{{.FechCreacion}}</td>
+                <td class="py-3 px-4">{{.TipoDesc}}</td>
+                <td class="py-3 px-4 text-gray-600">{{.Referencia}}</td>
+                <td class="py-3 px-4 text-right">
+                    <a href="/correspondencia/ficha?barra={{.Barra}}" class="text-blue-600 hover:underline text-xs mr-3">Ver ficha</a>
+                    <form method="post" action="/correspondencia/recepcion" class="inline">
+                        <input type="hidden" name="barra" value="{{.Barra}}">
+                        <button type="submit" class="px-3 py-1.5 bg-green-600 text-white rounded-md text-xs font-semibold hover:bg-green-700 transition">Recepcionar</button>
+                    </form>
+                </td>
+            </tr>
+            {{else}}
+            <tr><td colspan="5" class="py-8 px-4 text-center text-gray-500">No hay documentos pendientes de recepción.</td></tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+{{end}}

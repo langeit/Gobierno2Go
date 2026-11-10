@@ -1,0 +1,39 @@
+{{define "content"}}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-slate-900 mb-1">Nueva solicitud de materiales</h1>
+    <p class="text-gray-600 text-sm">Queda en estado de aprobación hasta que se registre el visto bueno.</p>
+</div>
+<form method="post" action="/adquisiciones/solicitudes/nueva" class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm space-y-5">
+    <div>
+        <p class="text-xs font-medium text-gray-500">Departamento</p>
+        {{if .DeptoFijo}}
+        <p class="text-sm font-medium">{{.DeptoNombre}}</p>
+        {{else}}
+        <select name="depto" required class="mt-1 w-full max-w-md border border-gray-300 rounded-lg px-3 py-2 text-sm">
+            <option value="">Seleccione</option>
+            {{range .Departamentos}}
+            <option value="{{.IDDepto}}" {{if eq .IDDepto $.Entrada.IDDepto}}selected{{end}}>{{.Descripcion}}</option>
+            {{end}}
+        </select>
+        {{end}}
+    </div>
+    <div class="space-y-2">
+        <h2 class="text-sm font-semibold">Materiales</h2>
+        {{range $linea := .Lineas}}
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
+            <select name="linea_material" class="md:col-span-3 border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                <option value="">Material</option>
+                {{range $.Materiales}}
+                <option value="{{.Codigo}}" {{if eq .Codigo $linea.CodMaterial}}selected{{end}}>{{.Nombre}}</option>
+                {{end}}
+            </select>
+            <input name="linea_cantidad" type="number" min="0" placeholder="Cantidad" value="{{if $linea.Cantidad}}{{$linea.Cantidad}}{{end}}" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+        </div>
+        {{end}}
+    </div>
+    <div class="flex gap-3">
+        <button type="submit" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg">Enviar solicitud</button>
+        <a href="/adquisiciones/solicitudes" class="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-sm font-semibold rounded-lg">Volver</a>
+    </div>
+</form>
+{{end}}

@@ -1,0 +1,50 @@
+{{define "content"}}
+<h1 class="text-2xl font-bold text-slate-900 mb-1">Sistema de Registro y Control de Correspondencia</h1>
+<p class="text-gray-600 text-sm mb-8">Seleccione una acción para continuar.</p>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+        <p class="text-xs uppercase tracking-wide text-gray-500">Total documentos</p>
+        <p class="text-3xl font-bold text-slate-900 mt-1">{{.Stats.TotalDocuments}}</p>
+    </div>
+    <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+        <p class="text-xs uppercase tracking-wide text-gray-500">Pendientes de recepción</p>
+        <p class="text-3xl font-bold text-amber-600 mt-1">{{.Stats.Pendientes}}</p>
+    </div>
+    <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+        <p class="text-xs uppercase tracking-wide text-gray-500">Archivados</p>
+        <p class="text-3xl font-bold text-slate-900 mt-1">{{.Stats.Archivados}}</p>
+    </div>
+    <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+        <p class="text-xs uppercase tracking-wide text-gray-500">Recepcionados</p>
+        <p class="text-3xl font-bold text-slate-900 mt-1">{{.Stats.Recepcionados}}</p>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <a href="/correspondencia/ingreso" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+        <h2 class="text-lg font-semibold text-blue-700 mb-1">Ingreso y asignación</h2>
+        <p class="text-xs text-gray-500">Registrar un nuevo documento y asignarlo a un usuario o centro.</p>
+    </a>
+    <a href="/correspondencia/recepcion" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+        <h2 class="text-lg font-semibold text-blue-700 mb-1">Recepción</h2>
+        <p class="text-xs text-gray-500">Confirmar documentos en tránsito hacia usted ({{.Pendientes}} pendientes).</p>
+    </a>
+    <a href="/correspondencia/despacho" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+        <h2 class="text-lg font-semibold text-blue-700 mb-1">Despacho</h2>
+        <p class="text-xs text-gray-500">Enviar documentos en su poder a otros usuarios o centros.</p>
+    </a>
+    <a href="/correspondencia/archivo" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+        <h2 class="text-lg font-semibold text-blue-700 mb-1">Archivo</h2>
+        <p class="text-xs text-gray-500">Archivar documentos en carpetas y consultar lo archivado.</p>
+    </a>
+    <a href="/correspondencia/consulta" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+        <h2 class="text-lg font-semibold text-blue-700 mb-1">Consultas</h2>
+        <p class="text-xs text-gray-500">Buscar por correlativo, referencia, número, notas u origen.</p>
+    </a>
+    <a href="/correspondencia/estadisticas" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+        <h2 class="text-lg font-semibold text-blue-700 mb-1">Estadísticas</h2>
+        <p class="text-xs text-gray-500">Distribución de documentos por tipo y por centro.</p>
+    </a>
+</div>
+{{end}}

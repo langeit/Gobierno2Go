@@ -1,0 +1,24 @@
+{{define "content"}}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-slate-900 mb-1">{{if .Departamento}}Editar Departamento{{else}}Nuevo Departamento{{end}}</h1>
+    <p class="text-gray-600 text-sm">Ingrese el nombre o descripción del departamento.</p>
+</div>
+
+<form method="post" action="{{if .Departamento}}/formularios/admin/departamentos/{{.Departamento.IDDepto}}{{else}}/formularios/admin/departamentos/nuevo{{end}}" class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm max-w-2xl">
+    <div class="space-y-4 mb-6">
+        <div>
+            <label class="block text-xs font-medium text-gray-700 mb-1">Descripción *</label>
+            <input type="text" name="descripcion" required maxlength="200" value="{{if .Departamento}}{{.Departamento.Descripcion}}{{end}}" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Ej. Oficina de Personal">
+        </div>
+    </div>
+
+    <div class="flex items-center space-x-3">
+        <button type="submit" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-sm transition">
+            {{if .Departamento}}Guardar cambios{{else}}Crear departamento{{end}}
+        </button>
+        <a href="/formularios/admin/departamentos" class="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-slate-700 text-sm font-semibold rounded-lg transition">
+            Cancelar
+        </a>
+    </div>
+</form>
+{{end}}

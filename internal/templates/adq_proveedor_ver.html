@@ -1,0 +1,53 @@
+{{define "content"}}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-slate-900 mb-1">Proveedor</h1>
+</div>
+<div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm max-w-3xl">
+    <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+        <div>
+            <dt class="text-xs font-medium text-gray-500">RUT</dt>
+            <dd class="mt-1 font-mono text-slate-900">{{.Proveedor.Rut}}</dd>
+        </div>
+        <div>
+            <dt class="text-xs font-medium text-gray-500">Nombre</dt>
+            <dd class="mt-1 text-slate-900">{{.Proveedor.Nombre}}</dd>
+        </div>
+        <div>
+            <dt class="text-xs font-medium text-gray-500">Nombre fantasía</dt>
+            <dd class="mt-1 text-slate-900">{{.Proveedor.NombreFantasia}}</dd>
+        </div>
+        <div>
+            <dt class="text-xs font-medium text-gray-500">Dirección</dt>
+            <dd class="mt-1 text-slate-900">{{.Proveedor.Direccion}}</dd>
+        </div>
+        <div>
+            <dt class="text-xs font-medium text-gray-500">Ciudad</dt>
+            <dd class="mt-1 text-slate-900">{{.Proveedor.Ciudad}}</dd>
+        </div>
+        <div>
+            <dt class="text-xs font-medium text-gray-500">Región</dt>
+            <dd class="mt-1 text-slate-900">{{if .Proveedor.RegionNombre}}{{.Proveedor.RegionNombre}}{{else}}Sin región{{end}}</dd>
+        </div>
+        <div>
+            <dt class="text-xs font-medium text-gray-500">Teléfono</dt>
+            <dd class="mt-1 text-slate-900">{{.Proveedor.Fono}}</dd>
+        </div>
+        <div>
+            <dt class="text-xs font-medium text-gray-500">Fax</dt>
+            <dd class="mt-1 text-slate-900">{{.Proveedor.Fax}}</dd>
+        </div>
+        <div>
+            <dt class="text-xs font-medium text-gray-500">Contacto</dt>
+            <dd class="mt-1 text-slate-900">{{.Proveedor.Contacto}}</dd>
+        </div>
+        <div>
+            <dt class="text-xs font-medium text-gray-500">Correo</dt>
+            <dd class="mt-1 text-slate-900">{{.Proveedor.Mail}}</dd>
+        </div>
+    </dl>
+    <div class="mt-6 flex items-center space-x-3">
+        <a href="/adquisiciones/mantenedores/proveedores/{{.Proveedor.Rut}}/editar" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg">Modificar</a>
+        <a href="/adquisiciones/mantenedores/proveedores" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-slate-700 text-sm font-semibold rounded-lg">Volver al listado</a>
+    </div>
+</div>
+{{end}}

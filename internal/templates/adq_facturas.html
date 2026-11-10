@@ -1,0 +1,42 @@
+{{define "content"}}
+<div class="flex items-center justify-between mb-6 gap-4">
+    <div>
+        <h1 class="text-2xl font-bold text-slate-900 mb-1">Ingreso de facturas</h1>
+        <p class="text-gray-600 text-sm">Factura de materiales o de servicios sobre órdenes que aún no están completamente ingresadas.</p>
+    </div>
+    <div class="flex gap-2">
+        <a href="/adquisiciones/facturas/nueva?modo=14" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg">+ Materiales</a>
+        <a href="/adquisiciones/facturas/nueva?modo=15" class="px-4 py-2 bg-slate-700 hover:bg-slate-800 text-white text-sm font-semibold rounded-lg">+ Servicios</a>
+    </div>
+</div>
+<div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-x-auto">
+    <table class="min-w-full text-sm">
+        <thead class="bg-slate-100 text-slate-600">
+            <tr>
+                <th class="text-left px-4 py-3">Correlativo</th>
+                <th class="text-left px-4 py-3">Factura</th>
+                <th class="text-left px-4 py-3">Orden</th>
+                <th class="text-left px-4 py-3">Fecha</th>
+                <th class="text-left px-4 py-3">Proveedor</th>
+                <th class="text-left px-4 py-3">Modo</th>
+                <th class="text-right px-4 py-3">Total</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {{range .Facturas}}
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3"><a class="text-blue-700 hover:underline" href="/adquisiciones/facturas/{{.Correlativo}}">{{.Correlativo}}</a></td>
+                <td class="px-4 py-3">{{.NroFactura}}</td>
+                <td class="px-4 py-3"><a class="text-blue-700 hover:underline" href="/adquisiciones/ordenes/{{.NroOrden}}">{{.NroOrden}}</a></td>
+                <td class="px-4 py-3">{{.FechaFactura}}</td>
+                <td class="px-4 py-3">{{.Proveedor}}</td>
+                <td class="px-4 py-3">{{.ModoNombre}}</td>
+                <td class="px-4 py-3 text-right">{{money .TotalFinal}}</td>
+            </tr>
+            {{else}}
+            <tr><td colspan="7" class="px-4 py-12 text-center text-gray-500">No hay facturas ingresadas.</td></tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+{{end}}

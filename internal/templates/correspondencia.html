@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gobierno2Go - Control de Correspondencia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 flex min-h-screen">
+    <div class="flex-1 flex flex-col">
+        <header class="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center shadow-sm">
+            <div class="flex items-center space-x-4">
+                <a href="/dashboard" class="text-blue-600 font-semibold text-sm hover:underline">← Volver al Panel</a>
+                <span class="text-gray-300">|</span>
+                <span class="text-sm font-semibold text-gray-700">Módulo de Correspondencia (Control de Documentos)</span>
+            </div>
+            <a href="/" class="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">Cerrar Sesión</a>
+        </header>
+
+        <main class="p-6 md:p-10 max-w-7xl mx-auto w-full">
+            <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-900 mb-1">Control de Documentos Oficiales</h2>
+                    <p class="text-gray-600 text-sm">Gestión y seguimiento de correspondencia, oficios y memorándums.</p>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div id="stats-box" class="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2 text-blue-900 text-sm font-semibold">
+                        Total Documentos: <span id="total-docs">...</span>
+                    </div>
+                    <button onclick="openModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-4 py-2.5 rounded-lg transition shadow-sm cursor-pointer">
+                        + Nuevo Documento
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabla de Documentos -->
+            <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200 font-semibold text-slate-800">Listado de Documentos Registrados</div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr class="bg-gray-100 text-gray-700 border-b border-gray-200">
+                                <th class="py-3 px-4">Código Barra</th>
+                                <th class="py-3 px-4">Tipo</th>
+                                <th class="py-3 px-4">Origen</th>
+                                <th class="py-3 px-4">Acción</th>
+                                <th class="py-3 px-4">Número</th>
+                                <th class="py-3 px-4">Fecha</th>
+                                <th class="py-3 px-4">Referencia</th>
+                            </tr>
+                        </thead>
+                        <tbody id="docs-table-body">
+                            <tr><td colspan="7" class="py-4 px-4 text-center text-gray-500">Cargando documentos...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Nuevo Documento -->
+    <div id="doc-modal" class="fixed inset-0 bg-black/50 hidden flex justify-center items-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-lg w-full p-6 animate-fadeIn">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                <h3 class="text-lg font-bold text-slate-900">Registrar Nuevo Documento</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 font-bold text-lg">✕</button>
+            </div>
+            <form id="doc-form" onsubmit="createDocument(event)" class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Código de Barra</label>
+                        <input type="text" id="barra" required placeholder="Ej: COR-2026-003" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Número</label>
+                        <input type="number" id="numero" required placeholder="Ej: 105" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Tipo</label>
+                        <select id="tipo" class="w-full px-3 py-2 border rounded-lg text-sm bg-white">
+                            <option value="OF">Oficio (OF)</option>
+                            <option value="MEM">Memorándum (MEM)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Origen</label>
+                        <select id="origen" class="w-full px-3 py-2 border rounded-lg text-sm bg-white">
+                            <option value="INT">Interno (INT)</option>
+                            <option value="EXT">Externo (EXT)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Acción</label>
+                        <select id="accion" class="w-full px-3 py-2 border rounded-lg text-sm bg-white">
+                            <option value="RES">Respuesta (RES)</option>
+                            <option value="CON">Conocimiento (CON)</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Fecha de Creación (YYYY-MM-DD)</label>
+                    <input type="date" id="fechcreacion" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Referencia / Descripción</label>
+                    <textarea id="referencia" rows="3" required placeholder="Detalle o asunto del documento..." class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+                <div class="flex justify-end space-x-3 pt-3 border-t">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-200 text-gray-700 font-semibold text-sm rounded-lg hover:bg-gray-300 transition">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white font-semibold text-sm rounded-lg hover:bg-blue-700 transition">Guardar Documento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openModal() {
+            document.getElementById('doc-modal').classList.remove('hidden');
+            // Establecer fecha actual por defecto
+            document.getElementById('fechcreacion').value = new Date().toISOString().split('T')[0];
+        }
+
+        function closeModal() {
+            document.getElementById('doc-modal').classList.add('hidden');
+            document.getElementById('doc-form').reset();
+        }
+
+        async function loadCorrespondencia() {
+            try {
+                const [docsRes, statsRes] = await Promise.all([
+                    fetch('/api/v1/correspondencia/documents'),
+                    fetch('/api/v1/correspondencia/stats')
+                ]);
+
+                const docs = await docsRes.json();
+                const stats = await statsRes.json();
+
+                document.getElementById('total-docs').textContent = stats.total_documents;
+
+                const tbody = document.getElementById('docs-table-body');
+                if (!docs || docs.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="py-4 px-4 text-center text-gray-500">No hay documentos registrados.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = docs.map(d => '
+                    <tr class="border-b border-gray-100 hover:bg-gray-50">
+                        <td class="py-3 px-4 font-mono font-semibold text-blue-600">${d.barra}</td>
+                        <td class="py-3 px-4">${d.tipo}</td>
+                        <td class="py-3 px-4">${d.origen}</td>
+                        <td class="py-3 px-4">${d.accion}</td>
+                        <td class="py-3 px-4">${d.numero}</td>
+                        <td class="py-3 px-4">${d.fechcreacion}</td>
+                        <td class="py-3 px-4 text-gray-600">${d.referencia}</td>
+                    </tr>
+                ').join('');
+            } catch (err) {
+                console.error(err);
+                document.getElementById('docs-table-body').innerHTML = '<tr><td colspan="7" class="py-4 px-4 text-center text-red-500">Error al cargar datos del servidor.</td></tr>';
+            }
+        }
+
+        async function createDocument(e) {
+            e.preventDefault();
+            const data = {
+                barra: document.getElementById('barra').value.trim(),
+                tipo: document.getElementById('tipo').value,
+                origen: document.getElementById('origen').value,
+                accion: document.getElementById('accion').value,
+                numero: parseInt(document.getElementById('numero').value, 10),
+                fechcreacion: document.getElementById('fechcreacion').value,
+                referencia: document.getElementById('referencia').value.trim()
+            };
+
+            try {
+                const res = await fetch('/api/v1/correspondencia/documents', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (res.ok) {
+                    closeModal();
+                    loadCorrespondencia();
+                } else {
+                    const errText = await res.text();
+                    alert('Error al registrar documento: ' + errText);
+                }
+            } catch (err) {
+                alert('Error de conexión al guardar documento');
+            }
+        }
+
+        loadCorrespondencia();
+    </script>
+</body>
+</html>

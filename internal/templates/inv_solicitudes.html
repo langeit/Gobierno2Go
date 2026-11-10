@@ -1,0 +1,108 @@
+{{define "content"}}
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold text-slate-900">Solicitudes de Inventario</h1>
+    <a href="/inventario/solicitudes/nueva" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition">+ Nueva Solicitud</a>
+</div>
+
+{{if .PendientesJefe}}
+<div class="mb-8">
+    <h2 class="text-lg font-semibold text-amber-700 mb-3">Pendientes de su aprobación (Jefe Directo)</h2>
+    <div class="bg-white border border-amber-200 rounded-xl shadow-sm overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200 text-sm">
+            <thead class="bg-amber-50">
+                <tr>
+                    <th class="px-4 py-3 text-left font-semibold text-amber-800">Fecha</th>
+                    <th class="px-4 py-3 text-left font-semibold text-amber-800">Solicitante</th>
+                    <th class="px-4 py-3 text-left font-semibold text-amber-800">Tipo</th>
+                    <th class="px-4 py-3 text-left font-semibold text-amber-800">Descripción</th>
+                    <th class="px-4 py-3 text-right font-semibold text-amber-800">Acción</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {{range .PendientesJefe}}
+                <tr>
+                    <td class="px-4 py-3 text-gray-600">{{.FechaSolic.Format "02-01-2006"}}</td>
+                    <td class="px-4 py-3 font-medium text-gray-800">{{.NombreUsuario}}</td>
+                    <td class="px-4 py-3 text-gray-600">{{.TipoNombre}}</td>
+                    <td class="px-4 py-3 text-gray-600 truncate max-w-xs">{{.Descripcion}}</td>
+                    <td class="px-4 py-3 text-right">
+                        <a href="/inventario/solicitudes/{{.CorrSolic}}" class="text-blue-600 hover:underline font-medium">Revisar</a>
+                    </td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+</div>
+{{end}}
+
+{{if or .EsAdmin (and .User (.User.Puede "administracion"))}}
+{{if .PendientesAdmin}}
+<div class="mb-8">
+    <h2 class="text-lg font-semibold text-blue-700 mb-3">Pendientes de aprobación administrativa</h2>
+    <div class="bg-white border border-blue-200 rounded-xl shadow-sm overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200 text-sm">
+            <thead class="bg-blue-50">
+                <tr>
+                    <th class="px-4 py-3 text-left font-semibold text-blue-800">Fecha</th>
+                    <th class="px-4 py-3 text-left font-semibold text-blue-800">Solicitante</th>
+                    <th class="px-4 py-3 text-left font-semibold text-blue-800">Tipo</th>
+                    <th class="px-4 py-3 text-left font-semibold text-blue-800">Descripción</th>
+                    <th class="px-4 py-3 text-right font-semibold text-blue-800">Acción</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {{range .PendientesAdmin}}
+                <tr>
+                    <td class="px-4 py-3 text-gray-600">{{.FechaSolic.Format "02-01-2006"}}</td>
+                    <td class="px-4 py-3 font-medium text-gray-800">{{.NombreUsuario}}</td>
+                    <td class="px-4 py-3 text-gray-600">{{.TipoNombre}}</td>
+                    <td class="px-4 py-3 text-gray-600 truncate max-w-xs">{{.Descripcion}}</td>
+                    <td class="px-4 py-3 text-right">
+                        <a href="/inventario/solicitudes/{{.CorrSolic}}" class="text-blue-600 hover:underline font-medium">Revisar</a>
+                    </td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+</div>
+{{end}}
+{{end}}
+
+<h2 class="text-lg font-semibold text-slate-800 mb-3">Mis Solicitudes</h2>
+<div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200 text-sm">
+        <thead class="bg-slate-50">
+            <tr>
+                <th class="px-4 py-3 text-left font-semibold text-slate-700">Fecha</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-700">Tipo</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-700">Descripción</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-700">Estado</th>
+                <th class="px-4 py-3 text-right font-semibold text-slate-700">Detalle</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {{range .Solicitudes}}
+            <tr class="hover:bg-slate-50 transition">
+                <td class="px-4 py-3 text-gray-600">{{.FechaSolic.Format "02-01-2006"}}</td>
+                <td class="px-4 py-3 text-gray-800">{{.TipoNombre}}</td>
+                <td class="px-4 py-3 text-gray-600 truncate max-w-xs">{{.Descripcion}}</td>
+                <td class="px-4 py-3">
+                    <span class="px-2 py-0.5 rounded-full text-xs font-medium {{if eq .EstadoSol "A"}}bg-green-100 text-green-800{{else if eq .EstadoSol "R"}}bg-red-100 text-red-800{{else}}bg-amber-100 text-amber-800{{end}}">
+                        {{.EstadoNombre}}
+                    </span>
+                </td>
+                <td class="px-4 py-3 text-right">
+                    <a href="/inventario/solicitudes/{{.CorrSolic}}" class="text-blue-600 hover:underline">Ver</a>
+                </td>
+            </tr>
+            {{else}}
+            <tr>
+                <td colspan="5" class="px-4 py-8 text-center text-gray-500">No ha registrado solicitudes.</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+{{end}}

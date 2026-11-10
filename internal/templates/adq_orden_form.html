@@ -1,0 +1,118 @@
+{{define "content"}}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-slate-900 mb-1">{{.Title}}</h1>
+    <p class="text-gray-600 text-sm">El total y el IVA se calculan al guardar, con el porcentaje del tipo de impuesto.</p>
+</div>
+
+<form method="post" action="{{.Accion}}" class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm space-y-6">
+    <input type="hidden" name="modo" value="{{.Orden.ModoOrden}}">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+            <label class="block text-xs font-medium text-gray-700 mb-1" for="numero">Número de orden *</label>
+            <input id="numero" name="numero" type="number" min="1" required value="{{.Orden.Numero}}" {{if ne .Accion "/adquisiciones/ordenes/nueva"}}readonly{{end}} class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-700 mb-1" for="tipo_orden">Tipo de orden *</label>
+            <select id="tipo_orden" name="tipo_orden" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                <option value="">Seleccione</option>
+                {{range .TiposOrden}}
+                <option value="{{.Codigo}}" {{if eq .Codigo $.Orden.TipoOrden}}selected{{end}}>{{.Descripcion}}</option>
+                {{end}}
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-700 mb-1" for="proveedor">Proveedor *</label>
+            <select id="proveedor" name="proveedor" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                <option value="">Seleccione</option>
+                {{range .Proveedores}}
+                <option value="{{.Rut}}" {{if eq .Rut $.Orden.RutProveedor}}selected{{end}}>{{.Nombre}} ({{.Rut}})</option>
+                {{end}}
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-700 mb-1" for="impuesto">Tipo de impuesto *</label>
+            <select id="impuesto" name="impuesto" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                <option value="">Seleccione</option>
+                {{range .Impuestos}}
+                <option value="{{.Codigo}}" {{if eq .Codigo $.Orden.TipoImpuesto}}selected{{end}}>{{.Descripcion}}%</option>
+                {{end}}
+            </select>
+        </div>
+    </div>
+
+    {{if eq .Orden.ModoOrden 18}}
+    <div class="border border-slate-200 rounded-lg p-4 space-y-3">
+        <h2 class="text-sm font-semibold text-slate-800">Servicio</h2>
+        <div>
+            <label class="block text-xs font-medium text-gray-700 mb-1" for="desc_servicio">Descripción *</label>
+            <textarea id="desc_servicio" name="desc_servicio" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">{{.Orden.DescServicio}}</textarea>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1" for="cant_servicio">Cantidad *</label>
+                <input id="cant_servicio" name="cant_servicio" type="number" min="0" step="0.01" value="{{.Orden.CantServicio}}" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1" for="valor_servicio">Valor unitario *</label>
+                <input id="valor_servicio" name="valor_servicio" type="number" min="0" step="0.01" value="{{.Orden.ValorUnitServicio}}" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+            </div>
+        </div>
+    </div>
+    {{end}}
+
+    {{if .Facturadas}}
+    <div>
+        <h2 class="text-sm font-semibold text-slate-800 mb-2">Líneas ya facturadas</h2>
+        <p class="text-xs text-gray-500 mb-2">Estas líneas se conservan y no se pueden cambiar.</p>
+        <table class="min-w-full text-sm">
+            <thead class="bg-slate-100 text-slate-600"><tr><th class="text-left px-3 py-2">Material</th><th class="text-right px-3 py-2">Cantidad</th><th class="text-right px-3 py-2">Valor</th></tr></thead>
+            <tbody>
+                {{range .Facturadas}}
+                <tr><td class="px-3 py-2">{{.Nombre}}</td><td class="px-3 py-2 text-right">{{.Cantidad}}</td><td class="px-3 py-2 text-right">{{.ValorUnitario}}</td></tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+    {{end}}
+
+    <div>
+        <h2 class="text-sm font-semibold text-slate-800 mb-2">Materiales</h2>
+        <div class="space-y-2">
+            {{range $linea := .Lineas}}
+            <div class="grid grid-cols-1 md:grid-cols-6 gap-2">
+                <select name="linea_material" class="md:col-span-3 border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                    <option value="">Material</option>
+                    {{range $.Materiales}}
+                    <option value="{{.Codigo}}" {{if eq .Codigo $linea.CodMaterial}}selected{{end}}>{{.Nombre}}</option>
+                    {{end}}
+                </select>
+                <input name="linea_cantidad" type="number" min="0" placeholder="Cantidad" value="{{if $linea.Cantidad}}{{$linea.Cantidad}}{{end}}" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                <input name="linea_valor" type="number" min="0" placeholder="Valor unitario" value="{{if $linea.ValorUnitario}}{{$linea.ValorUnitario}}{{end}}" class="md:col-span-2 border border-gray-300 rounded-lg px-3 py-2 text-sm">
+            </div>
+            {{end}}
+        </div>
+    </div>
+
+    <div>
+        <h2 class="text-sm font-semibold text-slate-800 mb-2">Imputaciones presupuestarias</h2>
+        <div class="space-y-2">
+            {{range $imp := .Imputaciones}}
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                <select name="imp_asig" class="md:col-span-2 border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                    <option value="">Asignación</option>
+                    {{range $.Asignaciones}}
+                    <option value="{{.Correlativo}}" {{if eq .Correlativo $imp.CorrAsig}}selected{{end}}>{{.Codigo}} — {{.Descripcion}}</option>
+                    {{end}}
+                </select>
+                <input name="imp_monto" type="number" min="0" step="1" placeholder="Monto" value="{{if $imp.Monto}}{{printf "%.0f" $imp.Monto}}{{end}}" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+            </div>
+            {{end}}
+        </div>
+    </div>
+
+    <div class="flex items-center space-x-3">
+        <button type="submit" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg">Guardar</button>
+        <a href="/adquisiciones/ordenes" class="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-slate-700 text-sm font-semibold rounded-lg">Volver al listado</a>
+    </div>
+</form>
+{{end}}

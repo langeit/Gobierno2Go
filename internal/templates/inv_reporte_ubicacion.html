@@ -1,0 +1,62 @@
+{{define "content"}}
+<h1 class="text-2xl font-bold text-slate-900 mb-6">Listado de Bienes por Ubicación</h1>
+
+<form method="get" action="/inventario/reportes/ubicacion" class="mb-6 bg-white p-4 border border-gray-200 rounded-lg grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+    <div>
+        <label class="block text-xs font-medium text-gray-700 mb-1">Zona</label>
+        <select name="zona" class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm">
+            <option value="0">-- Todas --</option>
+            {{range .Zonas}}
+            <option value="{{.CorrZona}}" {{if eq .CorrZona $.ZonaID}}selected{{end}}>{{.Descripcion}}</option>
+            {{end}}
+        </select>
+    </div>
+    <div>
+        <label class="block text-xs font-medium text-gray-700 mb-1">Tipo de Bien</label>
+        <select name="tipo" class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm">
+            <option value="0">-- Todos --</option>
+            {{range .TiposBien}}
+            <option value="{{.CorrTbien}}" {{if eq .CorrTbien $.TipoID}}selected{{end}}>{{.Descripcion}}</option>
+            {{end}}
+        </select>
+    </div>
+    <div>
+        <label class="block text-xs font-medium text-gray-700 mb-1">Piso</label>
+        <input type="text" name="piso" value="{{.Piso}}" class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm">
+    </div>
+    <div>
+        <label class="block text-xs font-medium text-gray-700 mb-1">Oficina</label>
+        <input type="text" name="oficina" value="{{.Oficina}}" class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm">
+    </div>
+    <div class="md:col-span-4 flex justify-end">
+        <button type="submit" class="px-4 py-1.5 bg-slate-800 text-white rounded text-sm hover:bg-slate-900">Filtrar</button>
+    </div>
+</form>
+
+<div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200 text-sm">
+        <thead class="bg-slate-50">
+            <tr>
+                <th class="px-4 py-3 text-left font-semibold text-slate-700">Código</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-700">Descripción</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-700">Tipo</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-700">Ubicación</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {{range .Bienes}}
+            <tr>
+                <td class="px-4 py-3 font-mono text-xs font-medium text-blue-700">{{.CodigoBien}}</td>
+                <td class="px-4 py-3 text-gray-800">{{.Descripcion}}</td>
+                <td class="px-4 py-3 text-gray-600">{{.TipoBien}}</td>
+                <td class="px-4 py-3 text-gray-600">{{.Zona}} - Piso {{.Piso}} - Of. {{.Oficina}}</td>
+            </tr>
+            {{else}}
+            <tr>
+                <td colspan="4" class="px-4 py-8 text-center text-gray-500">No se encontraron bienes con los filtros seleccionados.</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+{{end}}

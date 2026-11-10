@@ -1,0 +1,71 @@
+{{define "content"}}
+<h1 class="text-2xl font-bold text-slate-900 mb-1">Módulo de Inventario</h1>
+<p class="text-gray-600 text-sm mb-8">Control de bienes, ubicaciones, responsables, solicitudes y depreciación.</p>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+    <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+        <p class="text-xs uppercase tracking-wide text-gray-500">Total bienes registrados</p>
+        <p class="text-3xl font-bold text-blue-700 mt-1">{{.TotalBienes}}</p>
+        <p class="text-xs text-gray-400 mt-1">bienes activos en sistema</p>
+    </div>
+    <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+        <p class="text-xs uppercase tracking-wide text-gray-500">Bienes bajo su cargo</p>
+        <p class="text-3xl font-bold text-emerald-700 mt-1">{{.MisBienes}}</p>
+        <p class="text-xs text-gray-400 mt-1">asignados a su persona</p>
+    </div>
+    <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+        <p class="text-xs uppercase tracking-wide text-gray-500">Solicitudes pendientes</p>
+        <p class="text-3xl font-bold text-amber-600 mt-1">{{.MisPendientes}}</p>
+        <p class="text-xs text-gray-400 mt-1">en curso</p>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <a href="/inventario/bienes" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+        <h2 class="text-lg font-semibold text-blue-700 mb-1">Listado de Bienes</h2>
+        <p class="text-xs text-gray-500">Consultar inventario general con detalles de ubicación y estado.</p>
+    </a>
+    <a href="/inventario/ingreso" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+        <h2 class="text-lg font-semibold text-blue-700 mb-1">Ingreso de Bienes</h2>
+        <p class="text-xs text-gray-500">Registrar nuevas adquisiciones con generación automática de código.</p>
+    </a>
+    <a href="/inventario/ubicacion" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+        <h2 class="text-lg font-semibold text-blue-700 mb-1">Cambio de Ubicación</h2>
+        <p class="text-xs text-gray-500">Actualizar zona, piso y oficina de los bienes.</p>
+    </a>
+    <a href="/inventario/estado" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+        <h2 class="text-lg font-semibold text-blue-700 mb-1">Cambio de Estado</h2>
+        <p class="text-xs text-gray-500">Modificar el estado operativo (bueno, malo, etc.).</p>
+    </a>
+    <a href="/inventario/cuenta" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+        <h2 class="text-lg font-semibold text-blue-700 mb-1">Asignación de Cuenta</h2>
+        <p class="text-xs text-gray-500">Vincular cuenta presupuestaria contable al bien.</p>
+    </a>
+    <a href="/inventario/responsable" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+        <h2 class="text-lg font-semibold text-blue-700 mb-1">Asignación de Responsable</h2>
+        <p class="text-xs text-gray-500">Asignar funcionarios custodios de los bienes.</p>
+    </a>
+    <a href="/inventario/solicitudes" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+        <h2 class="text-lg font-semibold text-blue-700 mb-1">Solicitudes y Aprobaciones</h2>
+        <p class="text-xs text-gray-500">Registrar y aprobar solicitudes de reparación, devolución o petición.</p>
+    </a>
+    <a href="/inventario/porcentaje" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+        <h2 class="text-lg font-semibold text-blue-700 mb-1">Ingreso Porcentaje</h2>
+        <p class="text-xs text-gray-500">Configurar porcentaje de actualización anual para depreciación.</p>
+    </a>
+    <a href="/inventario/depreciacion" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+        <h2 class="text-lg font-semibold text-blue-700 mb-1">Depreciación de Bienes</h2>
+        <p class="text-xs text-gray-500">Ejecutar cálculo anual de depreciación y valor libro.</p>
+    </a>
+    <a href="/inventario/reportes" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+        <h2 class="text-lg font-semibold text-blue-700 mb-1">Reportes</h2>
+        <p class="text-xs text-gray-500">Listados por responsable, ubicación, año, movimientos y depreciación.</p>
+    </a>
+    {{if or .EsAdmin (and .User (.User.Puede "administracion"))}}
+    <a href="/inventario/admin" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+        <h2 class="text-lg font-semibold text-blue-700 mb-1">Administración</h2>
+        <p class="text-xs text-gray-500">Gestionar catálogos de tipos de bien y zonas físicas.</p>
+    </a>
+    {{end}}
+</div>
+{{end}}

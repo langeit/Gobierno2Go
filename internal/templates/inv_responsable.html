@@ -1,0 +1,42 @@
+{{define "content"}}
+<h1 class="text-2xl font-bold text-slate-900 mb-6">Asignación de Responsable</h1>
+
+<div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm max-w-3xl">
+    <form method="get" action="/inventario/responsable" class="mb-6 flex items-end space-x-3">
+        <div class="flex-1">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Seleccionar Bien</label>
+            <select name="bien" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500" required onchange="this.form.submit()">
+                <option value="">-- Seleccione un bien para asignar responsables --</option>
+                {{range .Bienes}}
+                <option value="{{.CorrBien}}" {{if $.Seleccionado}}{{if eq .CorrBien $.Seleccionado.CorrBien}}selected{{end}}{{end}}>{{.CodigoBien}} - {{.Descripcion}}</option>
+                {{end}}
+            </select>
+        </div>
+    </form>
+
+    {{if .Seleccionado}}
+    <form method="post" action="/inventario/responsable" class="border-t border-gray-100 pt-6">
+        <input type="hidden" name="corr_bien" value="{{.Seleccionado.CorrBien}}">
+        
+        <div class="mb-4">
+            <h3 class="text-sm font-semibold text-slate-800 mb-2">Bien seleccionado: <span class="text-blue-600">{{.Seleccionado.CodigoBien}}</span></h3>
+            <p class="text-xs text-gray-500 mb-4">Marque los funcionarios que serán responsables de este bien. Al guardar, se reemplazarán los responsables anteriores.</p>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto border border-gray-200 rounded p-3 bg-slate-50">
+                {{range .Empleados}}
+                <label class="flex items-center space-x-2 text-sm text-gray-700 cursor-pointer hover:bg-white p-1 rounded transition">
+                    <input type="checkbox" name="id_empleado[]" value="{{.IDEmpleado}}" class="rounded text-blue-600 focus:ring-blue-500"
+                        {{if index $.ResponsablesAsignados .IDEmpleado}}checked{{end}}>
+                    <span>{{.Nombre}} <span class="text-xs text-gray-400">({{.Depto}})</span></span>
+                </label>
+                {{end}}
+            </div>
+        </div>
+
+        <div class="flex justify-end">
+            <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition">Guardar Responsables</button>
+        </div>
+    </form>
+    {{end}}
+</div>
+{{end}}

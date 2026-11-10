@@ -1,0 +1,66 @@
+{{define "inv_layout"}}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Title}} - Gobierno2Go</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 flex min-h-screen">
+    <aside class="w-64 bg-slate-900 text-white hidden md:flex flex-col fixed inset-y-0 left-0 shadow-lg">
+        <div class="p-5 text-xl font-bold bg-slate-950 text-center tracking-wide border-b border-slate-800">
+            Gobierno2Go
+        </div>
+        <div class="px-4 py-3 border-b border-slate-800">
+            <p class="text-xs uppercase tracking-wider text-slate-400">Módulo de Inventario</p>
+            <p class="text-sm font-semibold truncate">{{if .User}}{{.User.Nombre}}{{end}}</p>
+            <p class="text-xs text-slate-400 truncate">{{if .User}}{{.User.Login}}{{end}}</p>
+        </div>
+        <nav class="flex-1 overflow-y-auto py-3 space-y-0.5 text-sm">
+            <a href="/inventario" class="block px-4 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white transition">Menú principal</a>
+            <a href="/inventario/bienes" class="block px-4 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white transition">Listado de Bienes</a>
+            <a href="/inventario/ingreso" class="block px-4 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white transition">Ingreso de Bienes</a>
+            <a href="/inventario/ubicacion" class="block px-4 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white transition">Cambio de Ubicación</a>
+            <a href="/inventario/estado" class="block px-4 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white transition">Cambio de Estado</a>
+            <a href="/inventario/cuenta" class="block px-4 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white transition">Asignación de Cuenta</a>
+            <a href="/inventario/responsable" class="block px-4 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white transition">Asignación de Responsable</a>
+            <a href="/inventario/solicitudes" class="block px-4 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white transition">Solicitudes</a>
+            <a href="/inventario/porcentaje" class="block px-4 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white transition">Ingreso Porcentaje</a>
+            <a href="/inventario/depreciacion" class="block px-4 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white transition">Depreciación de Bienes</a>
+            <a href="/inventario/reportes" class="block px-4 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white transition">Reportes</a>
+            {{if or .EsAdmin (and .User (.User.Puede "administracion"))}}
+            <a href="/inventario/admin" class="block px-4 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white transition">Administración</a>
+            {{end}}
+            <div class="border-t border-slate-800 my-2"></div>
+            <a href="/dashboard" class="block px-4 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white transition">← Panel general</a>
+            <a href="/logout" class="block px-4 py-2.5 text-red-300 hover:bg-red-600 hover:text-white transition">Cerrar sesión</a>
+        </nav>
+    </aside>
+
+    <div class="flex-1 md:ml-64 flex flex-col">
+        <header class="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center shadow-sm">
+            <div class="flex items-center space-x-3">
+                <a href="/dashboard" class="text-slate-500 font-semibold text-sm hover:text-blue-600 hover:underline">Panel general</a>
+                <span class="text-gray-300">|</span>
+                <a href="/inventario" class="text-blue-600 font-semibold text-sm hover:underline">Inventario</a>
+                <span class="text-gray-300">|</span>
+                <span class="text-sm text-gray-600">{{.Title}}</span>
+            </div>
+            <div class="text-xs text-gray-500">{{if .User}}{{.User.Nombre}}{{end}}</div>
+        </header>
+
+        <main class="p-6 md:p-10 max-w-6xl w-full mx-auto">
+            {{if .Error}}
+            <div class="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{{.Error}}</div>
+            {{end}}
+            {{if .Success}}
+            <div class="mb-6 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm">{{.Success}}</div>
+            {{end}}
+
+            {{block "content" .}}{{end}}
+        </main>
+    </div>
+</body>
+</html>
+{{end}}

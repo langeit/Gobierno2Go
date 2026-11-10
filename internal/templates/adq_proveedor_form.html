@@ -1,0 +1,60 @@
+{{define "content"}}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-slate-900 mb-1">{{if .RutActual}}Modificar proveedor{{else}}Ingreso de proveedor{{end}}</h1>
+    <p class="text-gray-600 text-sm">El RUT se guarda sin puntos ni guion. La región sale del dominio de regiones.</p>
+</div>
+
+<form method="post" action="{{if .RutActual}}/adquisiciones/mantenedores/proveedores/{{.RutActual}}{{else}}/adquisiciones/mantenedores/proveedores/nuevo{{end}}" class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm max-w-3xl">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+            <label class="block text-xs font-medium text-gray-700 mb-1" for="rut">RUT *</label>
+            <input id="rut" name="rut" type="text" required maxlength="12" value="{{.Proveedor.Rut}}" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-700 mb-1" for="nombre">Nombre *</label>
+            <input id="nombre" name="nombre" type="text" required maxlength="100" value="{{.Proveedor.Nombre}}" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        </div>
+        <div class="sm:col-span-2">
+            <label class="block text-xs font-medium text-gray-700 mb-1" for="fantasia">Nombre fantasía</label>
+            <input id="fantasia" name="fantasia" type="text" maxlength="100" value="{{.Proveedor.NombreFantasia}}" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        </div>
+        <div class="sm:col-span-2">
+            <label class="block text-xs font-medium text-gray-700 mb-1" for="direccion">Dirección</label>
+            <input id="direccion" name="direccion" type="text" maxlength="100" value="{{.Proveedor.Direccion}}" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-700 mb-1" for="ciudad">Ciudad</label>
+            <input id="ciudad" name="ciudad" type="text" maxlength="100" value="{{.Proveedor.Ciudad}}" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-700 mb-1" for="region">Región</label>
+            <select id="region" name="region" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <option value="0">Sin región</option>
+                {{range .Regiones}}
+                <option value="{{.Codigo}}" {{if eq .Codigo $.Proveedor.Region}}selected{{end}}>{{.Descripcion}}</option>
+                {{end}}
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-700 mb-1" for="fono">Teléfono</label>
+            <input id="fono" name="fono" type="text" maxlength="15" value="{{.Proveedor.Fono}}" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-700 mb-1" for="fax">Fax</label>
+            <input id="fax" name="fax" type="text" maxlength="15" value="{{.Proveedor.Fax}}" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-700 mb-1" for="contacto">Contacto</label>
+            <input id="contacto" name="contacto" type="text" maxlength="100" value="{{.Proveedor.Contacto}}" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-700 mb-1" for="mail">Correo</label>
+            <input id="mail" name="mail" type="text" maxlength="50" value="{{.Proveedor.Mail}}" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        </div>
+    </div>
+    <div class="flex items-center space-x-3 pt-6">
+        <button type="submit" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-sm transition">{{if .RutActual}}Modificar{{else}}Guardar{{end}}</button>
+        <a href="/adquisiciones/mantenedores/proveedores" class="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-slate-700 text-sm font-semibold rounded-lg transition">Volver al listado</a>
+    </div>
+</form>
+{{end}}

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gobierno2Go - Panel Principal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 flex min-h-screen overflow-x-hidden">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="w-64 bg-slate-900 text-white fixed inset-y-0 left-0 transition-transform duration-300 ease-in-out z-30 flex flex-col shadow-lg">
+        <div class="p-5 text-xl font-bold bg-slate-950 text-center tracking-wide border-b border-slate-800 flex justify-between items-center">
+            <span>Gobierno2Go</span>
+            <button id="sidebar-close" class="text-slate-400 hover:text-white text-lg">✕</button>
+        </div>
+        <nav class="flex-1 overflow-y-auto py-4 space-y-1 text-sm">
+            <div class="px-4 py-1 text-xs font-semibold uppercase text-slate-400 tracking-wider text-slate-400">Principal</div>
+            <a href="#" class="block px-4 py-2.5 bg-blue-600 text-white font-medium border-l-4 border-blue-400">Panel General</a>
+            
+            {{if .User.Puede "adquisiciones"}}
+            <div class="mt-2">
+                <button onclick="toggleSubmenu('adq-submenu', this)" class="w-full flex justify-between items-center px-4 py-2.5 text-xs font-semibold uppercase text-slate-400 hover:text-white hover:bg-slate-800 transition tracking-wider cursor-pointer">
+                    <span>Adquisiciones</span>
+                    <span class="transform transition-transform duration-200 text-xs">▼</span>
+                </button>
+                <div id="adq-submenu" class="hidden pl-2 space-y-0.5 bg-slate-950/50 py-1">
+                    <a href="/adquisiciones" class="block px-4 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition text-xs">Menú de Adquisiciones</a>
+                    <a href="/adquisiciones/mantenedores" class="block px-4 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition text-xs">Mantenedores</a>
+                    <a href="/adquisiciones/mantenedores/proveedores" class="block pl-8 pr-4 py-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition text-xs">Proveedores</a>
+                    <a href="/adquisiciones/mantenedores/materiales" class="block pl-8 pr-4 py-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition text-xs">Materiales</a>
+                    <a href="/adquisiciones/mantenedores/asignaciones" class="block pl-8 pr-4 py-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition text-xs">Asignaciones</a>
+                    <a href="/adquisiciones/mantenedores/dominios" class="block pl-8 pr-4 py-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition text-xs">Dominios</a>
+                    <a href="/adquisiciones/mantenedores/tipos-dominio" class="block pl-8 pr-4 py-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition text-xs">Tipos de dominio</a>
+                    <a href="/adquisiciones/ordenes" class="block px-4 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition text-xs">Órdenes de Compra</a>
+                    <a href="/adquisiciones/facturas" class="block px-4 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition text-xs">Ingreso de facturas</a>
+                    <a href="/adquisiciones/solicitudes" class="block px-4 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition text-xs">Solicitudes de Materiales</a>
+                    <a href="/adquisiciones/reportes/consumo" class="block px-4 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition text-xs">Consumo Valorizado</a>
+                    <a href="/adquisiciones/reportes/stock" class="block px-4 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition text-xs">Stock de Productos</a>
+                    <a href="/adquisiciones/reportes" class="block px-4 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition text-xs">Reportes</a>
+                </div>
+            </div>
+            {{end}}
+
+            {{if .User.Puede "inventario"}}
+            <div class="mt-2">
+                <button onclick="toggleSubmenu('inv-submenu', this)" class="w-full flex justify-between items-center px-4 py-2.5 text-xs font-semibold uppercase text-slate-400 hover:text-white hover:bg-slate-800 transition tracking-wider cursor-pointer">
+                    <span>Inventario</span>
+                    <span class="transform transition-transform duration-200 text-xs">▼</span>
+                </button>
+                <div id="inv-submenu" class="hidden pl-2 space-y-0.5 bg-slate-950/50 py-1">
+                    <a href="/inventario" class="block px-4 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition text-xs">Menú de Inventario</a>
+                    <a href="/inventario/ingreso" class="block px-4 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition text-xs">Ingreso de Bienes</a>
+                    <a href="/inventario/bienes" class="block px-4 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition text-xs">Listado de Bienes</a>
+                    <a href="/inventario/solicitudes" class="block px-4 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition text-xs">Solicitudes</a>
+                    <a href="/inventario/reportes" class="block px-4 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition text-xs">Reportes</a>
+                </div>
+            </div>
+            {{end}}
+
+            {{if .User.Puede "correspondencia"}}
+            <div class="mt-2">
+                <button onclick="toggleSubmenu('cor-submenu', this)" class="w-full flex justify-between items-center px-4 py-2.5 text-xs font-semibold uppercase text-slate-400 hover:text-white hover:bg-slate-800 transition tracking-wider cursor-pointer">
+                    <span>Correspondencia</span>
+                    <span class="transform transition-transform duration-200 text-xs">▼</span>
+                </button>
+                <div id="cor-submenu" class="hidden pl-2 space-y-0.5 bg-slate-950/50 py-1">
+                    <a href="/correspondencia" class="block px-4 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition text-xs">Control de Documentos</a>
+                    <a href="/correspondencia/estadisticas" class="block px-4 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition text-xs">Estadísticas</a>
+                </div>
+            </div>
+            {{end}}
+
+            {{if .User.Puede "formularios"}}
+            <div class="mt-2">
+                <button onclick="toggleSubmenu('form-submenu', this)" class="w-full flex justify-between items-center px-4 py-2.5 text-xs font-semibold uppercase text-slate-400 hover:text-white hover:bg-slate-800 transition tracking-wider cursor-pointer">
+                    <span>Formularios y RRHH</span>
+                    <span class="transform transition-transform duration-200 text-xs">▼</span>
+                </button>
+                <div id="form-submenu" class="hidden pl-2 space-y-0.5 bg-slate-950/50 py-1">
+                    <a href="/formularios" class="block px-4 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition text-xs">Solicitud Feriado Legal</a>
+                    <a href="/formularios/administrativo" class="block px-4 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition text-xs">Días Administrativos</a>
+                    <a href="/formularios/acumulacion" class="block px-4 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition text-xs">Acumulación de Feriado</a>
+                    <a href="/formularios/listado" class="block px-4 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition text-xs">Listado de Feriados</a>
+                    <a href="/formularios/admin" class="block px-4 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition text-xs">Administración y RRHH</a>
+                    <a href="/formularios/admin/trabajadores" class="block px-4 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition text-xs">Mantenedor de Trabajadores</a>
+                    <a href="/formularios/admin/departamentos" class="block px-4 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition text-xs">Mantenedor de Departamentos</a>
+                </div>
+            </div>
+            {{end}}
+
+            {{if .User.Puede "administracion"}}
+            <div class="mt-2">
+                <button onclick="toggleSubmenu('adm-submenu', this)" class="w-full flex justify-between items-center px-4 py-2.5 text-xs font-semibold uppercase text-slate-400 hover:text-white hover:bg-slate-800 transition tracking-wider cursor-pointer">
+                    <span>Administración</span>
+                    <span class="transform transition-transform duration-200 text-xs">▼</span>
+                </button>
+                <div id="adm-submenu" class="hidden pl-2 space-y-0.5 bg-slate-950/50 py-1">
+                    <a href="/admin" class="block px-4 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition text-xs">Accesos</a>
+                    <a href="/admin/perfiles" class="block px-4 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition text-xs">Perfiles</a>
+                    <a href="/admin/usuarios" class="block px-4 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition text-xs">Usuarios</a>
+                </div>
+            </div>
+            {{end}}
+        </nav>
+    </aside>
+
+    <!-- Main Content Wrapper -->
+    <div id="main-content" class="flex-1 flex flex-col transition-all duration-300 md:ml-64">
+        <header class="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center shadow-sm">
+            <div class="flex items-center space-x-4">
+                <button id="menu-toggle" class="text-slate-800 focus:outline-none text-2xl font-bold px-2 py-1 rounded hover:bg-gray-100 transition">☰</button>
+                <span class="text-sm font-semibold text-gray-600">Sistema Unificado de Gestión</span>
+            </div>
+            <a href="/logout" class="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">
+                Cerrar Sesión
+            </a>
+        </header>
+
+        <main class="p-6 md:p-10 max-w-7xl mx-auto w-full">
+            {{if .Error}}
+            <div class="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{{.Error}}</div>
+            {{end}}
+            <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-8">
+                <h2 class="text-2xl font-bold text-slate-900 mb-2">Bienvenido al Sistema Integrado</h2>
+                <p class="text-gray-600 text-sm leading-relaxed">Estos son los módulos habilitados para su perfil.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {{if .User.Puede "adquisiciones"}}
+                <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition">
+                    <h3 class="text-lg font-semibold text-blue-600 mb-2">Adquisiciones</h3>
+                    <p class="text-xs text-gray-500 mb-4">Órdenes de compra, proveedores, stock crítico y solicitudes de materiales.</p>
+                    <a href="/adquisiciones" class="inline-block px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white rounded-md text-xs font-semibold transition">Acceder</a>
+                </div>
+                {{end}}
+                {{if .User.Puede "inventario"}}
+                <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition">
+                    <h3 class="text-lg font-semibold text-blue-600 mb-2">Inventario</h3>
+                    <p class="text-xs text-gray-500 mb-4">Control de bienes, ubicaciones, responsables y depreciación.</p>
+                    <a href="/inventario" class="inline-block px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white rounded-md text-xs font-semibold transition">Acceder</a>
+                </div>
+                {{end}}
+                {{if .User.Puede "correspondencia"}}
+                <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition">
+                    <h3 class="text-lg font-semibold text-blue-600 mb-2">Correspondencia</h3>
+                    <p class="text-xs text-gray-500 mb-4">Control de documentos oficiales y estadísticas de correspondencia.</p>
+                    <a href="/correspondencia" class="inline-block px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white rounded-md text-xs font-semibold transition">Acceder</a>
+                </div>
+                {{end}}
+                {{if .User.Puede "formularios"}}
+                <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition">
+                    <h3 class="text-lg font-semibold text-blue-600 mb-2">Formularios y RRHH</h3>
+                    <p class="text-xs text-gray-500 mb-4">Solicitudes de feriados legales, días administrativos y acumulación.</p>
+                    <a href="/formularios" class="inline-block px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white rounded-md text-xs font-semibold transition">Acceder</a>
+                </div>
+                {{end}}
+                {{if .User.Puede "administracion"}}
+                <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition">
+                    <h3 class="text-lg font-semibold text-blue-600 mb-2">Administración</h3>
+                    <p class="text-xs text-gray-500 mb-4">Perfiles de acceso y asignación de módulos a los usuarios.</p>
+                    <a href="/admin" class="inline-block px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white rounded-md text-xs font-semibold transition">Acceder</a>
+                </div>
+                {{end}}
+            </div>
+            {{if not (or (.User.Puede "adquisiciones") (.User.Puede "inventario") (.User.Puede "correspondencia") (.User.Puede "formularios") (.User.Puede "administracion"))}}
+            <p class="mt-6 text-sm text-gray-500">Su usuario no tiene módulos asignados. Pida a un administrador que le asigne un perfil.</p>
+            {{end}}
+        </main>
+    </div>
+
+    <script>
+        const toggleBtn = document.getElementById('menu-toggle');
+        const sidebar = document.getElementById('sidebar');
+        const mainContent = document.getElementById('main-content');
+        const sidebarClose = document.getElementById('sidebar-close');
+
+        let isSidebarOpen = window.innerWidth >= 768;
+        if (!isSidebarOpen) {
+            sidebar.classList.add('-translate-x-full');
+            mainContent.classList.remove('md:ml-64');
+        }
+
+        function toggleSidebar() {
+            isSidebarOpen = !isSidebarOpen;
+            if (isSidebarOpen) {
+                sidebar.classList.remove('-translate-x-full');
+                mainContent.classList.add('md:ml-64');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                mainContent.classList.remove('md:ml-64');
+            }
+        }
+
+        function toggleSubmenu(id, btn) {
+            const submenu = document.getElementById(id);
+            const arrow = btn.querySelector('span:last-child');
+            submenu.classList.toggle('hidden');
+            arrow.classList.toggle('rotate-180');
+        }
+
+        toggleBtn.addEventListener('click', toggleSidebar);
+        if (sidebarClose) {
+            sidebarClose.addEventListener('click', toggleSidebar);
+        }
+    </script>
+</body>
+</html>

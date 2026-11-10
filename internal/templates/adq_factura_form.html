@@ -1,0 +1,92 @@
+{{define "content"}}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-slate-900 mb-1">{{if eq .Modo 15}}Factura de servicios{{else}}Factura de materiales{{end}}</h1>
+    <p class="text-gray-600 text-sm">Al guardar, las líneas marcadas quedan facturadas y su cantidad se suma al stock con el valor unitario de la factura.</p>
+</div>
+
+<form method="get" class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm mb-6 grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+    <input type="hidden" name="modo" value="{{.Modo}}">
+    <div>
+        <label class="block text-xs font-medium text-gray-700 mb-1" for="proveedor">Proveedor</label>
+        <select id="proveedor" name="proveedor" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" onchange="this.form.submit()">
+            <option value="">Todos</option>
+            {{range .Proveedores}}
+            <option value="{{.Rut}}" {{if eq .Rut $.ProveedorSel}}selected{{end}}>{{.Nombre}}</option>
+            {{end}}
+        </select>
+    </div>
+    <div>
+        <label class="block text-xs font-medium text-gray-700 mb-1" for="orden">Orden pendiente</label>
+        <select id="orden" name="orden" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" onchange="this.form.submit()">
+            <option value="">Seleccione</option>
+            {{range $o := .Ordenes}}
+            <option value="{{$o.Numero}}" {{with $.Orden}}{{if eq $o.Numero .Numero}}selected{{end}}{{end}}>{{$o.Numero}} — {{$o.Proveedor}} ({{$o.Fecha}})</option>
+            {{end}}
+        </select>
+    </div>
+    <a href="/adquisiciones/facturas" class="text-sm text-blue-700 hover:underline">Volver al listado</a>
+</form>
+
+{{with .Orden}}
+<form method="post" action="/adquisiciones/facturas/nueva" class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm space-y-5">
+    <input type="hidden" name="modo" value="{{$.Modo}}">
+    <input type="hidden" name="proveedor" value="{{$.ProveedorSel}}">
+    <input type="hidden" name="orden" value="{{.Numero}}">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+            <label class="block text-xs font-medium text-gray-700 mb-1" for="nro_factura">Número de factura *</label>
+            <input id="nro_factura" name="nro_factura" type="number" min="1" required value="{{$.Entrada.NroFactura}}" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-700 mb-1" for="fecha_factura">Fecha de factura *</label>
+            <input id="fecha_factura" name="fecha_factura" type="date" required value="{{$.Entrada.FechaFactura}}" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-700 mb-1" for="impuesto">Impuesto *</label>
+            <select id="impuesto" name="impuesto" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                {{range $.Impuestos}}
+                <option value="{{.Codigo}}" {{if eq .Codigo $.Entrada.TipoImpuesto}}selected{{end}}>{{.Descripcion}}%</option>
+                {{end}}
+            </select>
+        </div>
+    </div>
+
+    {{if and (eq $.Modo 15) .DescServicio (not .ServicioFacturado)}}
+    <div class="border border-slate-200 rounded-lg p-4 space-y-3">
+        <h2 class="text-sm font-semibold">Servicio de la orden</h2>
+        <textarea name="desc_servicio" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">{{if $.Entrada.DescServicio}}{{$.Entrada.DescServicio}}{{else}}{{.DescServicio}}{{end}}</textarea>
+        <div class="grid grid-cols-2 gap-3">
+            <input name="cant_servicio" type="number" min="0" step="0.01" value="{{if $.Entrada.CantServicio}}{{$.Entrada.CantServicio}}{{else}}{{.CantServicio}}{{end}}" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+            <input name="valor_servicio" type="number" min="0" step="0.01" value="{{if $.Entrada.ValorUnitServicio}}{{$.Entrada.ValorUnitServicio}}{{else}}{{.ValorUnitServicio}}{{end}}" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+        </div>
+    </div>
+    {{end}}
+
+    {{if $.Pendientes}}
+    <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+            <thead class="bg-slate-100 text-slate-600">
+                <tr><th class="px-3 py-2"></th><th class="text-left px-3 py-2">Material</th><th class="text-right px-3 py-2">Cantidad</th><th class="text-right px-3 py-2">Valor unitario</th></tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {{range $.Pendientes}}
+                <tr>
+                    <td class="px-3 py-2"><input type="checkbox" name="factura_corr" value="{{.Correlativo}}" checked></td>
+                    <td class="px-3 py-2">{{.Nombre}}<input type="hidden" name="fac_mat_{{.Correlativo}}" value="{{.CodMaterial}}"></td>
+                    <td class="px-3 py-2 text-right"><input name="fac_cant_{{.Correlativo}}" type="number" min="1" value="{{.Cantidad}}" class="w-24 border border-gray-300 rounded px-2 py-1 text-sm text-right"></td>
+                    <td class="px-3 py-2 text-right"><input name="fac_val_{{.Correlativo}}" type="number" min="0" value="{{.ValorUnitario}}" class="w-28 border border-gray-300 rounded px-2 py-1 text-sm text-right"></td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+    {{else if ne $.Modo 15}}
+    <p class="text-sm text-gray-500">Esta orden no tiene materiales pendientes.</p>
+    {{end}}
+
+    <button type="submit" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg">Ingresar factura</button>
+</form>
+{{else}}
+<p class="text-sm text-gray-500">Seleccione una orden pendiente para continuar.</p>
+{{end}}
+{{end}}

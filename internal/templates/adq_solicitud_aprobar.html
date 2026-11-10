@@ -1,0 +1,37 @@
+{{define "content"}}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-slate-900 mb-1">Visto bueno de la solicitud</h1>
+    <p class="text-gray-600 text-sm">El usuario de la sesión registra la aprobación. Puede ajustar las líneas antes de guardarlas de nuevo.</p>
+</div>
+{{with .Solicitud}}
+{{if eq .Estado 25}}
+<form method="post" action="/adquisiciones/solicitudes/{{.Numero}}/aprobar" class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm space-y-5">
+    <p class="text-sm">Solicitud {{.Numero}} de {{.Departamento}}, pedida por {{.Usuario}} el {{.Fecha}}.</p>
+    <label class="flex items-center gap-2 text-sm">
+        <input type="checkbox" name="vbjefe" value="S" {{if $.VistoBueno}}checked{{end}}>
+        Visto bueno del jefe. Sin esta marca la solicitud queda rechazada y no se puede entregar.
+    </label>
+    <div class="space-y-2">
+        {{range $linea := $.Lineas}}
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
+            <select name="linea_material" class="md:col-span-3 border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                <option value="">Material</option>
+                {{range $.Materiales}}
+                <option value="{{.Codigo}}" {{if eq .Codigo $linea.CodMaterial}}selected{{end}}>{{.Nombre}}</option>
+                {{end}}
+            </select>
+            <input name="linea_cantidad" type="number" min="0" value="{{if $linea.Cantidad}}{{$linea.Cantidad}}{{end}}" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+        </div>
+        {{end}}
+    </div>
+    <div class="flex gap-3">
+        <button type="submit" class="px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg">Guardar resolución</button>
+        <a href="/adquisiciones/solicitudes/{{.Numero}}" class="px-4 py-2.5 bg-gray-100 text-sm font-semibold rounded-lg">Volver</a>
+    </div>
+</form>
+{{else}}
+<p class="text-sm text-gray-600">Esta solicitud ya fue resuelta ({{.EstadoNombre}}).</p>
+<p class="mt-4"><a href="/adquisiciones/solicitudes/{{.Numero}}" class="text-sm text-blue-700 hover:underline">Ver la solicitud</a></p>
+{{end}}
+{{end}}
+{{end}}

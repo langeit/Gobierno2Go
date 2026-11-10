@@ -1,0 +1,85 @@
+{{define "content"}}
+<h1 class="text-2xl font-bold text-slate-900 mb-6">Administración de Inventario</h1>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <!-- Tipos de Bien -->
+    <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+        <h2 class="text-lg font-semibold text-slate-800 mb-4">Tipos de Bien</h2>
+        
+        <form method="post" action="/inventario/admin/tipo-bien" class="mb-6 border-b border-gray-100 pb-6">
+            <div class="grid grid-cols-3 gap-3 mb-3">
+                <div class="col-span-2">
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Descripción</label>
+                    <input type="text" name="descripcion" class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Código (2 dígitos)</label>
+                    <input type="text" name="codigo" maxlength="2" class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm" required>
+                </div>
+            </div>
+            <div class="flex justify-end">
+                <button type="submit" class="px-4 py-1.5 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">Agregar Tipo</button>
+            </div>
+        </form>
+
+        <div class="max-h-64 overflow-y-auto">
+            <table class="min-w-full text-sm">
+                <thead class="bg-slate-50 sticky top-0">
+                    <tr>
+                        <th class="px-3 py-2 text-left font-medium text-slate-700">Código</th>
+                        <th class="px-3 py-2 text-left font-medium text-slate-700">Descripción</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {{range .TiposBien}}
+                    <tr>
+                        <td class="px-3 py-2 font-mono text-xs text-gray-600">{{.Codigo}}</td>
+                        <td class="px-3 py-2 text-gray-800">{{.Descripcion}}</td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Zonas -->
+    <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+        <h2 class="text-lg font-semibold text-slate-800 mb-4">Zonas Físicas</h2>
+        
+        <form method="post" action="/inventario/admin/zona" class="mb-6 border-b border-gray-100 pb-6">
+            <div class="grid grid-cols-3 gap-3 mb-3">
+                <div class="col-span-2">
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Descripción</label>
+                    <input type="text" name="descripcion" class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Código (máx 5)</label>
+                    <input type="text" name="codigo" maxlength="5" class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm" required>
+                </div>
+            </div>
+            <div class="flex justify-end">
+                <button type="submit" class="px-4 py-1.5 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">Agregar Zona</button>
+            </div>
+        </form>
+
+        <div class="max-h-64 overflow-y-auto">
+            <table class="min-w-full text-sm">
+                <thead class="bg-slate-50 sticky top-0">
+                    <tr>
+                        <th class="px-3 py-2 text-left font-medium text-slate-700">Código</th>
+                        <th class="px-3 py-2 text-left font-medium text-slate-700">Descripción</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {{range .Zonas}}
+                    <tr>
+                        <td class="px-3 py-2 font-mono text-xs text-gray-600">{{.Codigo}}</td>
+                        <td class="px-3 py-2 text-gray-800">{{.Descripcion}}</td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{{end}}

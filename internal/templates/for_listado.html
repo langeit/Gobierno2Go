@@ -1,0 +1,69 @@
+{{define "content"}}
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+    <div>
+        <h1 class="text-2xl font-bold text-slate-900 mb-1">Listado de Feriados y Facultativos</h1>
+        <p class="text-gray-600 text-sm">Solicitudes registradas en el año {{.Anho}}.</p>
+    </div>
+    {{if or .PuedeAdmin (and .User (.User.Puede "administracion"))}}
+    <form method="get" action="/formularios/listado" class="flex items-center gap-2">
+        <select name="empleado" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+            <option value="0">Todos los empleados</option>
+            {{range .Empleados}}
+            <option value="{{.IDEmpleado}}" {{if eq .IDEmpleado $.FiltroEmpleado}}selected{{end}}>{{.Nombre}}</option>
+            {{end}}
+        </select>
+        <button type="submit" class="px-4 py-2 bg-slate-800 text-white text-sm rounded-lg hover:bg-slate-900">Filtrar</button>
+    </form>
+    {{end}}
+</div>
+
+<div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-x-auto">
+    <table class="min-w-full text-sm">
+        <thead class="bg-slate-100 text-slate-600">
+            <tr>
+                <th class="text-left px-4 py-3">N°</th>
+                <th class="text-left px-4 py-3">Empleado</th>
+                <th class="text-left px-4 py-3">Departamento</th>
+                <th class="text-left px-4 py-3">Tipo</th>
+                <th class="text-right px-4 py-3">Días</th>
+                <th class="text-left px-4 py-3">Inicio</th>
+                <th class="text-left px-4 py-3">Término</th>
+                <th class="text-left px-4 py-3">Estado</th>
+                <th class="text-left px-4 py-3">Acciones</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {{range .Solicitudes}}
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3 font-mono text-xs">{{.IDDpermiso}}</td>
+                <td class="px-4 py-3">{{.Empleado}}</td>
+                <td class="px-4 py-3 text-gray-600">{{.Depto}}</td>
+                <td class="px-4 py-3">{{.TipoNombre}}{{if .Acumulado}} <span class="text-xs text-amber-600">· Acumulado</span>{{end}}</td>
+                <td class="px-4 py-3 text-right">{{printf "%.1f" .DiasTomados}}</td>
+                <td class="px-4 py-3">{{.FechaInicio.Format "02-01-2006"}}</td>
+                <td class="px-4 py-3">{{.FechaFin.Format "02-01-2006"}}</td>
+                <td class="px-4 py-3">
+                    {{if eq .VBJefe "S"}}
+                    <span class="px-2 py-1 rounded-full text-xs bg-green-100 text-green-700">Aprobada</span>
+                    {{else if .FechaResolucion}}
+                    <span class="px-2 py-1 rounded-full text-xs bg-red-100 text-red-700" title="{{.MotivoRechazo}}">Rechazada</span>
+                    {{else}}
+                    <span class="px-2 py-1 rounded-full text-xs bg-amber-100 text-amber-700">Pendiente</span>
+                    {{end}}
+                </td>
+                <td class="px-4 py-3">
+                    <form method="post" action="/formularios/eliminar" onsubmit="return confirm('¿Eliminar la solicitud {{.IDDpermiso}}?');">
+                        <input type="hidden" name="id" value="{{.IDDpermiso}}">
+                        <button type="submit" class="text-red-600 hover:text-red-800 text-xs font-semibold">Eliminar</button>
+                    </form>
+                </td>
+            </tr>
+            {{else}}
+            <tr>
+                <td colspan="9" class="px-4 py-8 text-center text-gray-500">No hay solicitudes registradas para el año {{.Anho}}.</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+{{end}}

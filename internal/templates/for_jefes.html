@@ -1,0 +1,46 @@
+{{define "content"}}
+<h1 class="text-2xl font-bold text-slate-900 mb-1">Configuración de Jefes de Departamento</h1>
+<p class="text-gray-600 text-sm mb-6">Asigne el jefe directo y la persona que aprueba las solicitudes de cada departamento.</p>
+
+<form method="post" action="/formularios/admin/jefes" class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-x-auto">
+    <table class="min-w-full text-sm">
+        <thead class="bg-slate-100 text-slate-600">
+            <tr>
+                <th class="text-left px-4 py-3">Departamento</th>
+                <th class="text-left px-4 py-3">Jefe directo</th>
+                <th class="text-left px-4 py-3">Aprueba al jefe</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {{range .Jefes}}
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3 font-medium">{{.DeptoNombre}}</td>
+                <td class="px-4 py-3">
+                    <select name="jefe_{{.IDDepto}}" class="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm">
+                        <option value="0">Sin asignar</option>
+                        {{$j := .}}
+                        {{range $.Empleados}}
+                        <option value="{{.IDEmpleado}}" {{if eq .IDEmpleado $j.IDEmpleado}}selected{{end}}>{{.Nombre}}</option>
+                        {{end}}
+                    </select>
+                </td>
+                <td class="px-4 py-3">
+                    <select name="aprueba_{{.IDDepto}}" class="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm">
+                        <option value="0">Sin asignar</option>
+                        {{$j := .}}
+                        {{range $.Empleados}}
+                        <option value="{{.IDEmpleado}}" {{if eq .IDEmpleado $j.IDAprueba}}selected{{end}}>{{.Nombre}}</option>
+                        {{end}}
+                    </select>
+                </td>
+            </tr>
+            {{else}}
+            <tr><td colspan="3" class="px-4 py-8 text-center text-gray-500">No hay departamentos registrados.</td></tr>
+            {{end}}
+        </tbody>
+    </table>
+    <div class="p-4 border-t border-gray-100">
+        <button type="submit" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg">Guardar configuración</button>
+    </div>
+</form>
+{{end}}

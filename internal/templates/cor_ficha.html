@@ -1,0 +1,86 @@
+{{define "content"}}
+{{if .Ficha}}
+<div class="flex flex-col md:flex-row md:justify-between md:items-center gap-3 mb-6">
+    <div>
+        <h1 class="text-2xl font-bold text-slate-900">Ficha del documento</h1>
+        <p class="font-mono text-blue-700 font-semibold">{{.Ficha.Document.Barra}}</p>
+    </div>
+    {{if .Ficha.Archivado}}
+    <span class="bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-1 rounded-full">ARCHIVADO</span>
+    {{else}}
+    <span class="bg-green-100 text-green-700 text-xs font-semibold px-3 py-1 rounded-full">EN FLUJO</span>
+    {{end}}
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+    <div class="lg:col-span-2 bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+        <h2 class="font-semibold text-slate-800 mb-4">Datos del documento</h2>
+        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+            <div><dt class="text-gray-500 text-xs">Tipo</dt><dd class="font-medium">{{.Ficha.Document.TipoDesc}}</dd></div>
+            <div><dt class="text-gray-500 text-xs">Número</dt><dd class="font-medium">{{if .Ficha.Document.Numero}}{{.Ficha.Document.Numero}}{{else}}—{{end}}</dd></div>
+            <div><dt class="text-gray-500 text-xs">Origen</dt><dd class="font-medium">{{.Ficha.Document.OrigenDesc}}{{if .Ficha.Document.Origen2}} · {{.Ficha.Document.Origen2}}{{end}}</dd></div>
+            <div><dt class="text-gray-500 text-xs">Acción</dt><dd class="font-medium">{{.Ficha.Document.AccionDesc}}</dd></div>
+            <div><dt class="text-gray-500 text-xs">Fecha del documento</dt><dd class="font-medium">{{if .Ficha.Document.Fecha}}{{.Ficha.Document.Fecha}}{{else}}—{{end}}</dd></div>
+            <div><dt class="text-gray-500 text-xs">Fecha de creación</dt><dd class="font-medium">{{.Ficha.Document.FechCreacion}}</dd></div>
+            <div class="sm:col-span-2"><dt class="text-gray-500 text-xs">Referencia</dt><dd class="font-medium">{{.Ficha.Document.Referencia}}</dd></div>
+            {{if .Ficha.Document.Notas}}<div class="sm:col-span-2"><dt class="text-gray-500 text-xs">Notas</dt><dd class="font-medium">{{.Ficha.Document.Notas}}</dd></div>{{end}}
+        </dl>
+    </div>
+
+    <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+        <h2 class="font-semibold text-slate-800 mb-4">Ubicación actual</h2>
+        <dl class="space-y-3 text-sm">
+            <div><dt class="text-gray-500 text-xs">En poder de</dt><dd class="font-medium">{{if .Ficha.Actual}}{{.Ficha.Actual}}{{else}}—{{end}}</dd></div>
+            <div><dt class="text-gray-500 text-xs">Centro actual</dt><dd class="font-medium">{{if .Ficha.Etapa}}{{.Ficha.Etapa}}{{else}}—{{end}}</dd></div>
+            <div><dt class="text-gray-500 text-xs">Destino pendiente</dt>
+                <dd class="font-medium">
+                    {{if .Ficha.Destino}}{{.Ficha.Destino}}{{else if .Ficha.EtapaDestino}}{{.Ficha.EtapaDestino}}{{else}}—{{end}}
+                </dd>
+            </div>
+        </dl>
+    </div>
+</div>
+
+<div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+    <div class="px-4 py-3 border-b border-gray-200 font-semibold text-slate-800">Historial de movimientos</div>
+    <table class="w-full text-left text-sm">
+        <thead class="bg-gray-100 text-gray-700">
+            <tr>
+                <th class="py-3 px-4">#</th>
+                <th class="py-3 px-4">Fecha</th>
+                <th class="py-3 px-4">Movimiento</th>
+                <th class="py-3 px-4">Usuario</th>
+                <th class="py-3 px-4">Actual</th>
+                <th class="py-3 px-4">Comodín / destino</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Ficha.Historia}}
+            <tr class="border-t border-gray-100 hover:bg-gray-50">
+                <td class="py-3 px-4">{{.Correlativo}}</td>
+                <td class="py-3 px-4">{{.Fecha}}</td>
+                <td class="py-3 px-4 font-semibold">
+                    {{if eq .Movimiento "C"}}Creación
+                    {{else if eq .Movimiento "R"}}Recepción
+                    {{else if eq .Movimiento "A"}}Asignación
+                    {{else if eq .Movimiento "D"}}Devolución
+                    {{else if eq .Movimiento "F"}}Archivado
+                    {{else}}{{.Movimiento}}{{end}}
+                </td>
+                <td class="py-3 px-4">{{.Usuario}}</td>
+                <td class="py-3 px-4">{{.Actual}}</td>
+                <td class="py-3 px-4 text-gray-600">{{.Comodin}}</td>
+            </tr>
+            {{else}}
+            <tr><td colspan="6" class="py-8 px-4 text-center text-gray-500">Sin movimientos registrados.</td></tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+{{else}}
+<div class="bg-white border border-gray-200 rounded-xl p-10 text-center shadow-sm">
+    <p class="text-gray-600">No se encontró el documento solicitado.</p>
+    <a href="/correspondencia/consulta" class="inline-block mt-4 text-blue-600 hover:underline text-sm">Volver a consultas</a>
+</div>
+{{end}}
+{{end}}

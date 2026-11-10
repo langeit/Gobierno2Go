@@ -1,0 +1,33 @@
+{{define "content"}}
+<div class="mb-8">
+    <h1 class="text-2xl font-bold text-slate-900 mb-1">Mantenedores de Adquisiciones</h1>
+    <p class="text-gray-600 text-sm">Catálogos de proveedores, materiales, asignaciones presupuestarias y dominios.</p>
+</div>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <a href="/adquisiciones/mantenedores/proveedores" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+        <h2 class="text-lg font-semibold text-blue-700 mb-1">Proveedores</h2>
+        <p class="text-xs text-gray-500">RUT, razón social, contacto, región y datos de comunicación.</p>
+    </a>
+    <a href="/adquisiciones/mantenedores/materiales" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+        <h2 class="text-lg font-semibold text-blue-700 mb-1">Materiales</h2>
+        <p class="text-xs text-gray-500">Insumos, tipo de material y stock crítico.</p>
+    </a>
+    <a href="/adquisiciones/mantenedores/asignaciones" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+        <h2 class="text-lg font-semibold text-blue-700 mb-1">Asignaciones</h2>
+        <p class="text-xs text-gray-500">Códigos y descripciones de imputación presupuestaria.</p>
+    </a>
+    <a href="/adquisiciones/mantenedores/dominios" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+        <h2 class="text-lg font-semibold text-blue-700 mb-1">Dominios</h2>
+        <p class="text-xs text-gray-500">Valores de cada catálogo: tipos de material, regiones, estados y órdenes.</p>
+    </a>
+    <a href="/adquisiciones/mantenedores/tipos-dominio" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+        <h2 class="text-lg font-semibold text-blue-700 mb-1">Tipos de dominio</h2>
+        <p class="text-xs text-gray-500">Grupos del catálogo, como tipo de material o región.</p>
+    </a>
+</div>
+
+<p class="mt-8">
+    <a href="/adquisiciones" class="text-sm font-semibold text-blue-600 hover:text-blue-800">← Volver al módulo de adquisiciones</a>
+</p>
+{{end}}

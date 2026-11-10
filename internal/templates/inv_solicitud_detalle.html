@@ -1,0 +1,94 @@
+{{define "content"}}
+<div class="mb-6">
+    <a href="/inventario/solicitudes" class="text-sm text-blue-600 hover:underline mb-2 inline-block">← Volver a solicitudes</a>
+    <h1 class="text-2xl font-bold text-slate-900">Detalle de Solicitud #{{.Solicitud.CorrSolic}}</h1>
+</div>
+
+{{if .Solicitud}}
+<div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm max-w-4xl">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 border-b border-gray-100 pb-6">
+        <div>
+            <p class="text-xs text-gray-500 uppercase tracking-wide">Fecha y Hora</p>
+            <p class="text-sm font-medium text-gray-800">{{.Solicitud.FechaSolic.Format "02-01-2006"}} a las {{.Solicitud.HoraSol}}</p>
+        </div>
+        <div>
+            <p class="text-xs text-gray-500 uppercase tracking-wide">Estado Actual</p>
+            <p class="mt-1">
+                <span class="px-2.5 py-1 rounded-full text-xs font-semibold {{if eq .Solicitud.EstadoSol "A"}}bg-green-100 text-green-800{{else if eq .Solicitud.EstadoSol "R"}}bg-red-100 text-red-800{{else}}bg-amber-100 text-amber-800{{end}}">
+                    {{.Solicitud.EstadoNombre}}
+                </span>
+            </p>
+        </div>
+        <div>
+            <p class="text-xs text-gray-500 uppercase tracking-wide">Solicitante</p>
+            <p class="text-sm font-medium text-gray-800">{{.Solicitud.NombreUsuario}} <span class="text-gray-500 font-normal">({{.Solicitud.Depto}})</span></p>
+        </div>
+        <div>
+            <p class="text-xs text-gray-500 uppercase tracking-wide">Tipo de Solicitud</p>
+            <p class="text-sm font-medium text-gray-800">{{.Solicitud.TipoNombre}}</p>
+        </div>
+    </div>
+
+    <div class="mb-6">
+        <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">Descripción</p>
+        <p class="text-sm text-gray-800 bg-slate-50 p-4 rounded-lg border border-gray-100">{{.Solicitud.Descripcion}}</p>
+    </div>
+
+    {{if .Solicitud.Bienes}}
+    <div class="mb-6">
+        <p class="text-xs text-gray-500 uppercase tracking-wide mb-2">Bienes Involucrados</p>
+        <div class="border border-gray-200 rounded-lg overflow-hidden">
+            <table class="min-w-full divide-y divide-gray-200 text-sm">
+                <thead class="bg-slate-50">
+                    <tr>
+                        <th class="px-4 py-2 text-left font-medium text-slate-700">Código</th>
+                        <th class="px-4 py-2 text-left font-medium text-slate-700">Descripción</th>
+                        <th class="px-4 py-2 text-left font-medium text-slate-700">Estado</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {{range .Solicitud.Bienes}}
+                    <tr>
+                        <td class="px-4 py-2 font-mono text-xs text-blue-700">{{.CodigoBien}}</td>
+                        <td class="px-4 py-2 text-gray-800">{{.Descripcion}}</td>
+                        <td class="px-4 py-2 text-gray-600">{{.EstadoNombre}}</td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {{end}}
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-gray-100 pt-6">
+        <div>
+            <p class="text-xs text-gray-500 uppercase tracking-wide">Visto Bueno Jefe Directo</p>
+            <p class="text-sm font-medium mt-1">
+                {{if eq .Solicitud.VBJefe "S"}}<span class="text-green-600">Aprobado</span>{{else if eq .Solicitud.VBJefe "N"}}<span class="text-red-600">Rechazado</span>{{else}}<span class="text-gray-400">Pendiente</span>{{end}}
+                {{if .Solicitud.FechaAprobJefe}}<span class="text-xs text-gray-400 font-normal ml-1">({{.Solicitud.FechaAprobJefe.Format "02-01-2006"}})</span>{{end}}
+            </p>
+        </div>
+        <div>
+            <p class="text-xs text-gray-500 uppercase tracking-wide">Visto Bueno Administración</p>
+            <p class="text-sm font-medium mt-1">
+                {{if eq .Solicitud.VBAdmin "S"}}<span class="text-green-600">Aprobado</span>{{else if eq .Solicitud.VBAdmin "N"}}<span class="text-red-600">Rechazado</span>{{else}}<span class="text-gray-400">Pendiente</span>{{end}}
+                {{if .Solicitud.FechaAprobAdmin}}<span class="text-xs text-gray-400 font-normal ml-1">({{.Solicitud.FechaAprobAdmin.Format "02-01-2006"}})</span>{{end}}
+            </p>
+        </div>
+    </div>
+
+    {{if or .PuedeResolverJefe .PuedeResolverAdmin}}
+    <div class="mt-8 border-t border-gray-100 pt-6 flex justify-end space-x-3">
+        <form method="post" action="/inventario/solicitudes/{{.Solicitud.CorrSolic}}/resolver" class="inline">
+            <input type="hidden" name="accion" value="rechazar">
+            <button type="submit" class="px-5 py-2 border border-red-300 text-red-700 rounded-lg font-medium hover:bg-red-50 transition" onclick="return confirm('¿Está seguro de rechazar esta solicitud?')">Rechazar</button>
+        </form>
+        <form method="post" action="/inventario/solicitudes/{{.Solicitud.CorrSolic}}/resolver" class="inline">
+            <input type="hidden" name="accion" value="aprobar">
+            <button type="submit" class="px-6 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition">Aprobar Solicitud</button>
+        </form>
+    </div>
+    {{end}}
+</div>
+{{end}}
+{{end}}

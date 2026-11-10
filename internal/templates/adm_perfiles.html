@@ -1,0 +1,64 @@
+{{define "content"}}
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold text-slate-900">Perfiles de acceso</h1>
+</div>
+
+<div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-x-auto mb-8">
+    <table class="min-w-full divide-y divide-gray-200 text-sm">
+        <thead class="bg-slate-50">
+            <tr>
+                <th class="px-4 py-3 text-left font-semibold text-slate-700">Perfil</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-700">Módulos</th>
+                <th class="px-4 py-3 text-right font-semibold text-slate-700">Usuarios</th>
+                <th class="px-4 py-3"></th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {{range .Perfiles}}
+            <tr>
+                <td class="px-4 py-3">
+                    <p class="font-medium text-gray-800">{{.Nombre}}</p>
+                    <p class="text-xs text-gray-500">{{.Descripcion}}</p>
+                </td>
+                <td class="px-4 py-3 text-gray-600 text-xs">{{if .Nombres}}{{.Nombres}}{{else}}Sin módulos{{end}}</td>
+                <td class="px-4 py-3 text-right text-gray-700">{{.Usuarios}}</td>
+                <td class="px-4 py-3 text-right">
+                    <a href="/admin/perfiles/{{.ID}}" class="text-blue-600 hover:underline text-sm">Editar</a>
+                </td>
+            </tr>
+            {{else}}
+            <tr>
+                <td colspan="4" class="px-4 py-8 text-center text-gray-500">No hay perfiles definidos.</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+
+<form method="post" action="/admin/perfiles" class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm max-w-3xl">
+    <h2 class="text-lg font-semibold text-slate-900 mb-4">Nuevo perfil</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Nombre</label>
+            <input type="text" name="nombre" required maxlength="80" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Descripción</label>
+            <input type="text" name="descripcion" maxlength="200" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+        </div>
+    </div>
+    <p class="text-xs font-medium text-gray-600 mb-2">Módulos</p>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-5">
+        {{range .Modulos}}
+        <label class="flex items-start space-x-2 text-sm text-gray-700">
+            <input type="checkbox" name="modulos" value="{{.Codigo}}" class="mt-1">
+            <span>
+                <span class="font-medium">{{.Nombre}}</span>
+                <span class="block text-xs text-gray-500">{{.Descripcion}}</span>
+            </span>
+        </label>
+        {{end}}
+    </div>
+    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700">Crear perfil</button>
+</form>
+{{end}}

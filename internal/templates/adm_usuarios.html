@@ -1,0 +1,85 @@
+{{define "content"}}
+<h1 class="text-2xl font-bold text-slate-900 mb-6">Usuarios y perfiles</h1>
+
+<form method="post" action="/admin/usuarios" class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-8">
+    <h2 class="text-lg font-semibold text-slate-900 mb-4">Nuevo usuario</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Login</label>
+            <input type="text" name="login" required maxlength="12" class="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="máx. 12 caracteres">
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Nombre</label>
+            <input type="text" name="nombre" required maxlength="100" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Contraseña</label>
+            <input type="text" name="password" required maxlength="100" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+        </div>
+    </div>
+    <p class="text-xs font-medium text-gray-600 mb-2">Perfiles iniciales</p>
+    <div class="flex flex-wrap gap-3 mb-5">
+        {{range .Perfiles}}
+        <label class="flex items-center space-x-2 text-sm text-gray-700">
+            <input type="checkbox" name="perfiles" value="{{.ID}}">
+            <span>{{.Nombre}}</span>
+        </label>
+        {{end}}
+    </div>
+    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700">Crear usuario</button>
+</form>
+
+<div class="space-y-4">
+    {{range .Usuarios}}
+    {{$u := .}}
+    <form method="post" action="/admin/usuarios/{{.IDUsuario}}" class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+        <div class="flex items-center justify-between gap-3 mb-4">
+            <p class="text-xs text-gray-500">Login {{.Login}} · identificador {{.IDUsuario}}</p>
+            {{if .Activo}}
+            <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Activo</span>
+            {{else}}
+            <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-700">Inactivo</span>
+            {{end}}
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Nombre</label>
+                <input type="text" name="nombre" required maxlength="100" value="{{.Nombre}}" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Estado</label>
+                <select name="estado" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+                    <option value="1" {{if eq .Estado "1"}}selected{{end}}>Activo</option>
+                    <option value="0" {{if eq .Estado "0"}}selected{{end}}>Inactivo</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Nueva contraseña</label>
+                <input type="password" name="password" maxlength="72" autocomplete="new-password" placeholder="En blanco no cambia" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Empleado</label>
+                <select name="id_empleado" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+                    <option value="0">Sin empleado</option>
+                    {{range $.Empleados}}
+                    <option value="{{.IDEmpleado}}" {{if eq .IDEmpleado $u.IDEmpleado}}selected{{end}}>{{.Nombre}}</option>
+                    {{end}}
+                </select>
+            </div>
+        </div>
+        <p class="text-xs font-medium text-gray-600 mb-2">Perfiles</p>
+        <div class="flex flex-wrap gap-3 mb-4">
+            {{range $.Perfiles}}
+            <label class="flex items-center space-x-2 text-sm text-gray-700">
+                <input type="checkbox" name="perfiles" value="{{.ID}}" {{if $u.TienePerfil .ID}}checked{{end}}>
+                <span>{{.Nombre}}</span>
+            </label>
+            {{end}}
+        </div>
+        <button type="submit" class="px-3 py-1.5 bg-slate-800 text-white rounded text-xs font-semibold hover:bg-slate-900">Guardar usuario</button>
+    </form>
+    {{else}}
+    <p class="text-sm text-gray-500">No hay usuarios.</p>
+    {{end}}
+</div>
+{{end}}

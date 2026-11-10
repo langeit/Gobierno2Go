@@ -1,0 +1,19 @@
+# Changelog
+
+## [2.0.0] - 2026-11-10
+
+Primera versión publicada. Es el port en Go de la intranet en PHP y la base de las versiones siguientes.
+
+### Añadido
+
+- Ingreso con sesión, panel general y acceso según el módulo asignado al perfil.
+- **Correspondencia.** Ingreso y asignación, recepción, despacho, archivo, consultas y estadísticas.
+- **Formularios y RRHH.** Solicitud de feriado legal, día administrativo, acumulación de feriado, listado de solicitudes, aprobaciones y administración. La administración cubre trabajadores, departamentos, asignación de feriados y facultativos, jefes de departamento y el registro de feriados y facultativos por Personal.
+- **Inventario.** Listado e ingreso de bienes, cambio de ubicación, cambio de estado, asignación de cuenta, asignación de responsable, solicitudes y aprobaciones, porcentaje de actualización, depreciación y reportes por responsable, ubicación, año, movimientos y depreciación. La administración del módulo cubre tipos de bien y zonas físicas.
+- **Adquisiciones.** Órdenes de compra, ingreso de facturas, solicitudes de materiales y mantenedores de proveedores, materiales, asignaciones, dominios y tipos de dominio. Los reportes cubren consumo valorizado, stock, bajo stock mínimo, stock histórico, entrega promedio mensual, orden de pedido, resolución administrativa de compra, resolución administrativa exenta, listado de órdenes e ingreso de materiales.
+- **Administración.** Perfiles de acceso y usuarios. En esta versión también entran el mantenedor de trabajadores y el de departamentos.
+
+### Cambiado
+
+- La aplicación queda en Go, Chi y PostgreSQL, con la interfaz en Tailwind CSS.
+- La baja de un registro maestro lo marca como eliminado (`E`). Las listas, los selectores y el acceso por perfil muestran solo los vigentes (`V`). Un documento ya guardado conserva el nombre con el que se registró.

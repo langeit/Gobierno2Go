@@ -1,0 +1,48 @@
+{{define "content"}}
+<div class="flex flex-col md:flex-row md:justify-between md:items-center gap-3 mb-6">
+    <div>
+        <h1 class="text-2xl font-bold text-slate-900">Despacho de Correspondencia</h1>
+        <p class="text-gray-600 text-sm mt-1">Seleccione uno o más destinos para cada documento.</p>
+    </div>
+    <div class="bg-blue-50 border border-blue-200 text-blue-800 rounded-lg px-4 py-2 text-sm font-semibold">
+        En su poder: {{.Total}}
+    </div>
+</div>
+
+<div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+    <table class="w-full text-left text-sm">
+        <thead class="bg-gray-100 text-gray-700">
+            <tr>
+                <th class="py-3 px-4">Correlativo</th>
+                <th class="py-3 px-4">Tipo</th>
+                <th class="py-3 px-4">Referencia</th>
+                <th class="py-3 px-4">Actual</th>
+                <th class="py-3 px-4">Despachar a</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Held}}
+            <tr class="border-t border-gray-100 hover:bg-gray-50 align-top">
+                <td class="py-3 px-4 font-mono font-semibold text-blue-700">
+                    <a href="/correspondencia/ficha?barra={{.Barra}}" class="hover:underline">{{.Barra}}</a>
+                </td>
+                <td class="py-3 px-4">{{.TipoDesc}}</td>
+                <td class="py-3 px-4 text-gray-600">{{.Referencia}}</td>
+                <td class="py-3 px-4 text-gray-600">{{.Actual}}</td>
+                <td class="py-3 px-4">
+                    <form method="post" action="/correspondencia/despacho" class="flex flex-col sm:flex-row gap-2">
+                        <input type="hidden" name="barra" value="{{.Barra}}">
+                        <select name="destinos" multiple size="3" required class="px-2 py-1 border rounded-md text-xs bg-white min-w-[14rem]">
+                            {{range $.Destinos}}<option value="{{.Value}}">{{.Label}} — {{.Group}}</option>{{end}}
+                        </select>
+                        <button type="submit" class="px-3 py-1.5 bg-blue-600 text-white rounded-md text-xs font-semibold hover:bg-blue-700 transition self-start">Despachar</button>
+                    </form>
+                </td>
+            </tr>
+            {{else}}
+            <tr><td colspan="5" class="py-8 px-4 text-center text-gray-500">No tiene documentos en su poder para despachar.</td></tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+{{end}}

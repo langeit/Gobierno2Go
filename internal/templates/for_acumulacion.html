@@ -1,0 +1,51 @@
+{{define "content"}}
+<h1 class="text-2xl font-bold text-slate-900 mb-1">Acumulación de Feriado</h1>
+<p class="text-gray-600 text-sm mb-6">Solicite acumular días de una solicitud de feriado ya aprobada. Personal debe aprobar la acumulación.</p>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+        <h2 class="text-sm font-semibold text-slate-900 mb-4">Nueva solicitud</h2>
+        {{if .Solicitudes}}
+        <form method="post" action="/formularios/acumulacion" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Solicitud aprobada</label>
+                <select name="id_dpermiso" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                    <option value="">Seleccione una solicitud</option>
+                    {{range .Solicitudes}}
+                    <option value="{{.IDDpermiso}}">#{{.IDDpermiso}} · {{.TipoNombre}} · {{.FechaInicio.Format "02-01-2006"}} al {{.FechaFin.Format "02-01-2006"}} ({{printf "%.1f" .DiasTomados}} días)</option>
+                    {{end}}
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Días a acumular</label>
+                <input type="number" name="dias_sol" min="1" step="1" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+            </div>
+            <button type="submit" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg">Solicitar acumulación</button>
+        </form>
+        {{else}}
+        <p class="text-sm text-gray-500">No tiene solicitudes de feriado aprobadas para acumular.</p>
+        {{end}}
+    </div>
+
+    <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+        <h2 class="text-sm font-semibold text-slate-900 mb-4">Mis acumulaciones</h2>
+        <div class="space-y-2">
+            {{range .Acumulaciones}}
+            <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg text-sm">
+                <div>
+                    <p class="font-semibold text-slate-800">Solicitud #{{.IDDpermiso}} · {{.DiasSol}} días</p>
+                    <p class="text-xs text-gray-500">{{.FechaSol.Format "02-01-2006"}}</p>
+                </div>
+                {{if .VBPersonal}}
+                <span class="px-2 py-1 rounded-full text-xs bg-green-100 text-green-700">Aprobada</span>
+                {{else}}
+                <span class="px-2 py-1 rounded-full text-xs bg-amber-100 text-amber-700">Pendiente</span>
+                {{end}}
+            </div>
+            {{else}}
+            <p class="text-sm text-gray-500">No hay acumulaciones registradas.</p>
+            {{end}}
+        </div>
+    </div>
+</div>
+{{end}}

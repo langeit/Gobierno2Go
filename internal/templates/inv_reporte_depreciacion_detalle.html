@@ -1,0 +1,65 @@
+{{define "content"}}
+<div class="mb-6">
+    <a href="/inventario/reportes/depreciacion" class="text-sm text-blue-600 hover:underline mb-2 inline-block">← Volver al listado</a>
+    <h1 class="text-2xl font-bold text-slate-900">Tabla de Depreciación</h1>
+</div>
+
+{{if .Bien}}
+<div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+            <p class="text-xs text-gray-500 uppercase tracking-wide">Bien</p>
+            <p class="text-sm font-semibold text-gray-800">{{.Bien.CodigoBien}}</p>
+            <p class="text-xs text-gray-600">{{.Bien.Descripcion}}</p>
+        </div>
+        <div>
+            <p class="text-xs text-gray-500 uppercase tracking-wide">Tipo</p>
+            <p class="text-sm font-medium text-gray-800">{{.Bien.TipoBien}}</p>
+        </div>
+        <div>
+            <p class="text-xs text-gray-500 uppercase tracking-wide">Monto Original</p>
+            <p class="text-sm font-medium text-gray-800">{{money .Bien.Monto}}</p>
+        </div>
+    </div>
+</div>
+
+<div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200 text-xs">
+        <thead class="bg-slate-50">
+            <tr>
+                <th class="px-3 py-2 text-left font-semibold text-slate-700">Año</th>
+                <th class="px-3 py-2 text-right font-semibold text-slate-700">% Act.</th>
+                <th class="px-3 py-2 text-right font-semibold text-slate-700">Cuota Act.</th>
+                <th class="px-3 py-2 text-right font-semibold text-slate-700">Bien Act.</th>
+                <th class="px-3 py-2 text-center font-semibold text-slate-700">Vida Útil</th>
+                <th class="px-3 py-2 text-right font-semibold text-slate-700">Depre. Año</th>
+                <th class="px-3 py-2 text-right font-semibold text-slate-700">Depre. Acum.</th>
+                <th class="px-3 py-2 text-right font-semibold text-slate-700">Valor Libro</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {{range .Depreciaciones}}
+            <tr>
+                <td class="px-3 py-2 font-medium text-gray-800">{{.Anho}}</td>
+                <td class="px-3 py-2 text-right text-gray-600">{{pct .ValorPorcent}}</td>
+                <td class="px-3 py-2 text-right text-gray-600">{{money .CuotaActua}}</td>
+                <td class="px-3 py-2 text-right font-medium text-gray-800">{{money .BienActua}}</td>
+                <td class="px-3 py-2 text-center text-gray-600">{{.AnoVidaUtil}}</td>
+                <td class="px-3 py-2 text-right text-gray-600">{{money .DepreAnho}}</td>
+                <td class="px-3 py-2 text-right text-gray-600">{{money .DepreAcum}}</td>
+                <td class="px-3 py-2 text-right font-semibold text-blue-700">{{money .ValorLibro}}</td>
+            </tr>
+            {{else}}
+            <tr>
+                <td colspan="8" class="px-4 py-8 text-center text-gray-500">No hay registros de depreciación para este bien.</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+{{else}}
+<div class="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-lg text-sm">
+    No se especificó un bien válido para mostrar el detalle.
+</div>
+{{end}}
+{{end}}

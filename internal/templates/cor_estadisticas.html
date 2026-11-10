@@ -1,0 +1,63 @@
+{{define "content"}}
+<h1 class="text-2xl font-bold text-slate-900 mb-1">Estadísticas de Correspondencia</h1>
+<p class="text-gray-600 text-sm mb-6">Resumen general y distribución de documentos.</p>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+        <p class="text-xs uppercase tracking-wide text-gray-500">Total documentos</p>
+        <p class="text-3xl font-bold text-slate-900 mt-1">{{.Stats.TotalDocuments}}</p>
+    </div>
+    <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+        <p class="text-xs uppercase tracking-wide text-gray-500">Pendientes</p>
+        <p class="text-3xl font-bold text-amber-600 mt-1">{{.Stats.Pendientes}}</p>
+    </div>
+    <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+        <p class="text-xs uppercase tracking-wide text-gray-500">Recepcionados</p>
+        <p class="text-3xl font-bold text-slate-900 mt-1">{{.Stats.Recepcionados}}</p>
+    </div>
+    <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+        <p class="text-xs uppercase tracking-wide text-gray-500">Archivados</p>
+        <p class="text-3xl font-bold text-slate-900 mt-1">{{.Stats.Archivados}}</p>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-200 font-semibold text-slate-800">Por tipo de documento</div>
+        <table class="w-full text-left text-sm">
+            <thead class="bg-gray-100 text-gray-700">
+                <tr><th class="py-2 px-4">Tipo</th><th class="py-2 px-4 text-right">Total</th></tr>
+            </thead>
+            <tbody>
+                {{range .PorTipo}}
+                <tr class="border-t border-gray-100">
+                    <td class="py-2 px-4">{{.Descripcion}}</td>
+                    <td class="py-2 px-4 text-right font-semibold">{{.Total}}</td>
+                </tr>
+                {{else}}
+                <tr><td colspan="2" class="py-6 px-4 text-center text-gray-500">Sin datos.</td></tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-200 font-semibold text-slate-800">Por centro / etapa</div>
+        <table class="w-full text-left text-sm">
+            <thead class="bg-gray-100 text-gray-700">
+                <tr><th class="py-2 px-4">Centro</th><th class="py-2 px-4 text-right">Total</th></tr>
+            </thead>
+            <tbody>
+                {{range .PorEtapa}}
+                <tr class="border-t border-gray-100">
+                    <td class="py-2 px-4">{{.Descripcion}}</td>
+                    <td class="py-2 px-4 text-right font-semibold">{{.Total}}</td>
+                </tr>
+                {{else}}
+                <tr><td colspan="2" class="py-6 px-4 text-center text-gray-500">Sin datos.</td></tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+</div>
+{{end}}
