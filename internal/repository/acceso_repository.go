@@ -5,6 +5,7 @@ import (
 	_ "embed"
 	"errors"
 	"strings"
+	"time"
 
 	"Gobierno2Go/internal/models"
 
@@ -14,11 +15,21 @@ import (
 //go:embed schema/001_perfiles.sql
 var perfilesSQL string
 
+//go:embed schema/005_acceso_permisos.sql
+var accesoPermisosSQL string
+
+//go:embed schema/006_tablas.sql
+var tablasSQL string
+
 var (
 	ErrPerfilProtegido = errors.New("el perfil de administrador no se puede eliminar")
 	ErrUltimoAdmin     = errors.New("debe quedar al menos un usuario con acceso a administración")
 	ErrDuplicado       = errors.New("ya existe un registro con ese nombre o login")
 	ErrDatos           = errors.New("los datos enviados no son válidos")
+	ErrAmbito          = errors.New("el empleado o el centro de responsabilidad queda fuera del ámbito del perfil")
+	ErrFichaOcupada    = errors.New("esa ficha ya tiene una cuenta de usuario")
+	ErrFichaRequerida  = errors.New("una cuenta con formularios debe tener un empleado")
+	ErrEmpleado        = errors.New("el empleado no existe o no está vigente")
 )
 
 type AccesoRepository struct {
@@ -29,20 +40,54 @@ func NewAccesoRepository(db *sql.DB) *AccesoRepository {
 	return &AccesoRepository{db: db}
 }
 
-// EnsureSchema crea las tablas de perfiles y el usuario administrador.
+// EnsureSchema crea las tablas de perfiles, permisos, las tablas de Bases y el usuario administrador.
 func (r *AccesoRepository) EnsureSchema() error {
-	for _, stmt := range strings.Split(perfilesSQL, ";") {
-		stmt = strings.TrimSpace(stmt)
-		if stmt == "" {
-			continue
-		}
-		if _, err := r.db.Exec(stmt); err != nil {
-			return err
-		}
+	if err := ejecutarScript(r.db, perfilesSQL); err != nil {
+		return err
+	}
+	if err := ejecutarScript(r.db, accesoPermisosSQL); err != nil {
+		return err
+	}
+	if err := ejecutarScript(r.db, tablasSQL); err != nil {
+		return err
 	}
 	_, _ = r.db.Exec(`ALTER TABLE gen_directorio ADD COLUMN IF NOT EXISTS estado VARCHAR(1) DEFAULT 'V'`)
 	_, _ = r.db.Exec(`UPDATE gen_directorio SET estado = 'V' WHERE estado IS NULL OR btrim(estado) = ''`)
-	return nil
+	return r.migrarLegadoMantener()
+}
+
+// migrarLegadoMantener asigna una sola vez los permisos de mantención que antes
+// salían del departamento 17, del departamento 18 o de tipo = 0.
+func (r *AccesoRepository) migrarLegadoMantener() error {
+	var aplicada bool
+	if err := r.db.QueryRow(`SELECT EXISTS (SELECT 1 FROM seg_migracion WHERE codigo = 'legado_mantener')`).Scan(&aplicada); err != nil {
+		return err
+	}
+	if aplicada {
+		return nil
+	}
+	if _, err := r.db.Exec(`
+		INSERT INTO seg_usuario_perfil (id_usuario, id_perfil, estado)
+		SELECT u.id_usuario, p.id_perfil, 'V'
+		FROM gen_usuario u
+		LEFT JOIN gen_directorio d ON d.id_empleado = u.id_empleado
+		JOIN seg_perfil p ON p.nombre = 'Oficina de Personal' AND p.estado = 'V'
+		WHERE COALESCE(d.depto, 0) = 17 OR COALESCE(u.tipo, '3') = '0'
+		ON CONFLICT (id_usuario, id_perfil) DO UPDATE SET estado = 'V'`); err != nil {
+		return err
+	}
+	if _, err := r.db.Exec(`
+		INSERT INTO seg_usuario_perfil (id_usuario, id_perfil, estado)
+		SELECT u.id_usuario, p.id_perfil, 'V'
+		FROM gen_usuario u
+		LEFT JOIN gen_directorio d ON d.id_empleado = u.id_empleado
+		JOIN seg_perfil p ON p.nombre = 'Encargado de inventario' AND p.estado = 'V'
+		WHERE COALESCE(d.depto, 0) = 18 OR COALESCE(u.tipo, '3') = '0'
+		ON CONFLICT (id_usuario, id_perfil) DO UPDATE SET estado = 'V'`); err != nil {
+		return err
+	}
+	_, err := r.db.Exec(`INSERT INTO seg_migracion (codigo) VALUES ('legado_mantener') ON CONFLICT DO NOTHING`)
+	return err
 }
 
 // esAdministradorDeSistema indica si los perfiles del usuario incluyen el módulo
@@ -146,7 +191,60 @@ func (r *AccesoRepository) Perfil(id int) (models.Perfil, error) {
 		LEFT JOIN seg_modulo m ON m.codigo = pm.codigo_modulo
 		WHERE p.id_perfil = $1 AND p.estado = 'V'
 		GROUP BY p.id_perfil`, id)
-	return scanPerfil(row.Scan)
+	p, err := scanPerfil(row.Scan)
+	if err != nil {
+		return p, err
+	}
+	p.Permisos, err = r.codigosPerfil(id)
+	if err != nil {
+		return p, err
+	}
+	p.Deptos, err = r.ambitosPerfil(id, "departamento")
+	if err != nil {
+		return p, err
+	}
+	p.Etapas, err = r.ambitosPerfil(id, "etapa")
+	return p, err
+}
+
+func (r *AccesoRepository) codigosPerfil(id int) ([]string, error) {
+	rows, err := r.db.Query(`
+		SELECT codigo_permiso FROM seg_perfil_permiso
+		WHERE id_perfil = $1 AND estado = 'V'
+		ORDER BY codigo_permiso`, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var codigos []string
+	for rows.Next() {
+		var c string
+		if err := rows.Scan(&c); err != nil {
+			return nil, err
+		}
+		codigos = append(codigos, c)
+	}
+	return codigos, rows.Err()
+}
+
+func (r *AccesoRepository) ambitosPerfil(id int, tipo string) ([]int, error) {
+	rows, err := r.db.Query(`
+		SELECT referencia FROM seg_perfil_ambito
+		WHERE id_perfil = $1 AND tipo = $2 AND estado = 'V'
+		ORDER BY referencia`, id, tipo)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var ids []int
+	for rows.Next() {
+		var n int
+		if err := rows.Scan(&n); err != nil {
+			return nil, err
+		}
+		ids = append(ids, n)
+	}
+	return ids, rows.Err()
 }
 
 func scanPerfil(scan func(...interface{}) error) (models.Perfil, error) {
@@ -232,9 +330,9 @@ func (r *AccesoRepository) asignaciones() (map[string]asignacion, error) {
 	return out, rows.Err()
 }
 
-func (r *AccesoRepository) CrearPerfil(nombre, descripcion string, modulos []string) (int, error) {
+func (r *AccesoRepository) CrearPerfil(nombre, descripcion string, permisos []string, deptos, etapas []int) (int, error) {
 	nombre = strings.TrimSpace(nombre)
-	if nombre == "" || len(modulos) == 0 {
+	if nombre == "" || len(permisos) == 0 {
 		return 0, ErrDatos
 	}
 	tx, err := r.db.Begin()
@@ -251,7 +349,10 @@ func (r *AccesoRepository) CrearPerfil(nombre, descripcion string, modulos []str
 	if err != nil {
 		return 0, traducirError(err)
 	}
-	if err := reemplazarModulos(tx, id, modulos, false); err != nil {
+	if err := reemplazarPermisos(tx, id, permisos, false); err != nil {
+		return 0, err
+	}
+	if err := reemplazarAmbitos(tx, id, deptos, etapas); err != nil {
 		return 0, err
 	}
 	if err := tx.Commit(); err != nil {
@@ -260,7 +361,7 @@ func (r *AccesoRepository) CrearPerfil(nombre, descripcion string, modulos []str
 	return id, nil
 }
 
-func (r *AccesoRepository) ActualizarPerfil(id int, nombre, descripcion string, modulos []string) error {
+func (r *AccesoRepository) ActualizarPerfil(id int, nombre, descripcion string, permisos []string, deptos, etapas []int) error {
 	nombre = strings.TrimSpace(nombre)
 	if nombre == "" {
 		return ErrDatos
@@ -276,9 +377,11 @@ func (r *AccesoRepository) ActualizarPerfil(id int, nombre, descripcion string, 
 		return err
 	}
 	if protegido {
-		modulos = asegurar(modulos, "administracion")
+		for _, accion := range []string{"consultar", "ingresar", "aprobar", "mantener"} {
+			permisos = asegurar(permisos, "administracion."+accion)
+		}
 	}
-	if len(modulos) == 0 {
+	if len(permisos) == 0 {
 		return ErrDatos
 	}
 	if _, err := tx.Exec(`
@@ -286,7 +389,10 @@ func (r *AccesoRepository) ActualizarPerfil(id int, nombre, descripcion string, 
 		id, nombre, strings.TrimSpace(descripcion)); err != nil {
 		return traducirError(err)
 	}
-	if err := reemplazarModulos(tx, id, modulos, protegido); err != nil {
+	if err := reemplazarPermisos(tx, id, permisos, protegido); err != nil {
+		return err
+	}
+	if err := reemplazarAmbitos(tx, id, deptos, etapas); err != nil {
 		return err
 	}
 	if ok, err := quedaAlgunAdmin(tx); err != nil {
@@ -340,11 +446,14 @@ func (r *AccesoRepository) AsignarPerfiles(idUsuario string, perfiles []int) err
 	return tx.Commit()
 }
 
-func (r *AccesoRepository) CrearUsuario(login, password, nombre string, perfiles []int) error {
+func (r *AccesoRepository) CrearUsuario(login, password, nombre string, idEmpleado int, perfiles []int) error {
 	login = strings.TrimSpace(login)
 	nombre = strings.TrimSpace(nombre)
 	if login == "" || password == "" || nombre == "" || len(login) > 12 {
 		return ErrDatos
+	}
+	if err := ValidarPassword(password); err != nil {
+		return err
 	}
 	hash, err := HashPassword(password)
 	if err != nil {
@@ -356,20 +465,22 @@ func (r *AccesoRepository) CrearUsuario(login, password, nombre string, perfiles
 	}
 	defer tx.Rollback()
 
+	if err := validarFichaYAmbito(tx, login, idEmpleado, perfiles); err != nil {
+		return err
+	}
+	var emp interface{}
+	if idEmpleado > 0 {
+		emp = idEmpleado
+	}
 	if _, err := tx.Exec(`
-		INSERT INTO gen_usuario (id_usuario, login, password, estado, nombre, tipo)
-		VALUES ($1, $1, $2, '1', $3, '3')`, login, hash, nombre); err != nil {
+		INSERT INTO gen_usuario (id_usuario, login, password, estado, nombre, tipo, id_empleado,
+		                         debe_cambiar_password, password_cambiada_en, password_expira)
+		VALUES ($1, $1, $2, '1', $3, '3', $4, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + INTERVAL '90 days')`,
+		login, hash, nombre, emp); err != nil {
 		return traducirError(err)
 	}
-	for _, id := range perfiles {
-		if id <= 0 {
-			continue
-		}
-		if _, err := tx.Exec(`
-			INSERT INTO seg_usuario_perfil (id_usuario, id_perfil)
-			VALUES ($1, $2)`, login, id); err != nil {
-			return err
-		}
+	if err := reemplazarPerfilesUsuario(tx, login, perfiles); err != nil {
+		return err
 	}
 	return tx.Commit()
 }
@@ -384,6 +495,9 @@ func (r *AccesoRepository) ActualizarUsuario(id, nombre, estado, password string
 	}
 	var hash string
 	if password != "" {
+		if err := ValidarPassword(password); err != nil {
+			return err
+		}
 		var err error
 		hash, err = HashPassword(password)
 		if err != nil {
@@ -405,6 +519,9 @@ func (r *AccesoRepository) ActualizarUsuario(id, nombre, estado, password string
 		return ErrDatos
 	}
 
+	if err := validarFichaYAmbito(tx, id, idEmpleado, perfiles); err != nil {
+		return err
+	}
 	var emp interface{}
 	if idEmpleado > 0 {
 		emp = idEmpleado
@@ -417,7 +534,12 @@ func (r *AccesoRepository) ActualizarUsuario(id, nombre, estado, password string
 	} else {
 		_, err = tx.Exec(`
 			UPDATE gen_usuario
-			SET nombre = $2, estado = $3, id_empleado = $4, password = $5
+			SET nombre = $2, estado = $3, id_empleado = $4, password = $5,
+			    debe_cambiar_password = TRUE,
+			    intentos_fallidos = 0,
+			    bloqueado_hasta = NULL,
+			    password_cambiada_en = CURRENT_TIMESTAMP,
+			    password_expira = CURRENT_TIMESTAMP + INTERVAL '90 days'
 			WHERE id_usuario = $1`, id, nombre, estado, emp, hash)
 	}
 	if err != nil {
@@ -529,6 +651,356 @@ func quedaAlgunAdminActivo(tx *sql.Tx) (bool, error) {
 	return n > 0, err
 }
 
+func (r *AccesoRepository) PermisosDeUsuario(idUsuario string) (map[string]bool, error) {
+	rows, err := r.db.Query(`
+		SELECT DISTINCT pp.codigo_permiso
+		FROM seg_usuario_perfil up
+		JOIN seg_perfil p ON p.id_perfil = up.id_perfil AND p.estado = 'V'
+		JOIN seg_perfil_permiso pp ON pp.id_perfil = up.id_perfil AND pp.estado = 'V'
+		WHERE up.id_usuario = $1 AND up.estado = 'V'`, idUsuario)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := map[string]bool{}
+	for rows.Next() {
+		var codigo string
+		if err := rows.Scan(&codigo); err != nil {
+			return nil, err
+		}
+		out[codigo] = true
+	}
+	return out, rows.Err()
+}
+
+func (r *AccesoRepository) Permisos() ([]models.Permiso, error) {
+	rows, err := r.db.Query(`
+		SELECT codigo, codigo_modulo, accion, nombre, orden
+		FROM seg_permiso
+		ORDER BY orden, codigo`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var lista []models.Permiso
+	for rows.Next() {
+		var p models.Permiso
+		if err := rows.Scan(&p.Codigo, &p.Modulo, &p.Accion, &p.Nombre, &p.Orden); err != nil {
+			return nil, err
+		}
+		lista = append(lista, p)
+	}
+	return lista, rows.Err()
+}
+
+func (r *AccesoRepository) Departamentos() ([]models.OpcionAmbito, error) {
+	return r.opciones(`
+		SELECT id_depto, descripcion
+		FROM gen_departamento
+		WHERE COALESCE(nullif(btrim(estado), ''), 'V') = 'V'
+		ORDER BY descripcion`)
+}
+
+func (r *AccesoRepository) Etapas() ([]models.OpcionAmbito, error) {
+	return r.opciones(`SELECT cod_etapa, descripcion FROM cor_etapa ORDER BY descripcion`)
+}
+
+func (r *AccesoRepository) opciones(query string) ([]models.OpcionAmbito, error) {
+	rows, err := r.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var lista []models.OpcionAmbito
+	for rows.Next() {
+		var o models.OpcionAmbito
+		if err := rows.Scan(&o.ID, &o.Nombre); err != nil {
+			return nil, err
+		}
+		lista = append(lista, o)
+	}
+	return lista, rows.Err()
+}
+
+func (r *AccesoRepository) PermisosEfectivos() ([]models.PermisoEfectivo, error) {
+	rows, err := r.db.Query(`
+		SELECT u.login, COALESCE(u.nombre, ''),
+		       COALESCE(string_agg(DISTINCT m.nombre || ' · ' || pe.nombre, ', ' ORDER BY m.nombre || ' · ' || pe.nombre), '')
+		FROM gen_usuario u
+		LEFT JOIN seg_usuario_perfil up ON up.id_usuario = u.id_usuario AND up.estado = 'V'
+		LEFT JOIN seg_perfil p ON p.id_perfil = up.id_perfil AND p.estado = 'V'
+		LEFT JOIN seg_perfil_permiso pp ON pp.id_perfil = p.id_perfil AND pp.estado = 'V'
+		LEFT JOIN seg_permiso pe ON pe.codigo = pp.codigo_permiso
+		LEFT JOIN seg_modulo m ON m.codigo = pe.codigo_modulo
+		WHERE btrim(u.estado) IN ('1', 't')
+		GROUP BY u.id_usuario, u.login, u.nombre
+		ORDER BY u.nombre, u.login`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var lista []models.PermisoEfectivo
+	for rows.Next() {
+		var item models.PermisoEfectivo
+		if err := rows.Scan(&item.Usuario, &item.Nombre, &item.Permisos); err != nil {
+			return nil, err
+		}
+		lista = append(lista, item)
+	}
+	return lista, rows.Err()
+}
+
+func (r *AccesoRepository) QuienPuede() ([]models.PermisoCobertura, error) {
+	rows, err := r.db.Query(`
+		SELECT pe.codigo, m.nombre, pe.nombre,
+		       COALESCE(string_agg(DISTINCT u.nombre, ', ' ORDER BY u.nombre), '')
+		FROM seg_permiso pe
+		JOIN seg_modulo m ON m.codigo = pe.codigo_modulo
+		LEFT JOIN seg_perfil_permiso pp ON pp.codigo_permiso = pe.codigo AND pp.estado = 'V'
+		LEFT JOIN seg_perfil p ON p.id_perfil = pp.id_perfil AND p.estado = 'V'
+		LEFT JOIN seg_usuario_perfil up ON up.id_perfil = p.id_perfil AND up.estado = 'V'
+		LEFT JOIN gen_usuario u ON u.id_usuario = up.id_usuario AND btrim(u.estado) IN ('1', 't')
+		GROUP BY pe.codigo, m.nombre, pe.nombre, pe.orden
+		ORDER BY pe.orden`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var lista []models.PermisoCobertura
+	for rows.Next() {
+		var item models.PermisoCobertura
+		if err := rows.Scan(&item.Codigo, &item.Modulo, &item.Nombre, &item.Usuarios); err != nil {
+			return nil, err
+		}
+		lista = append(lista, item)
+	}
+	return lista, rows.Err()
+}
+
+func (r *AccesoRepository) AuditoriaReciente() ([]models.EventoAuditoria, error) {
+	rows, err := r.db.Query(`
+		SELECT fecha, id_usuario, accion, detalle, ip
+		FROM seg_auditoria
+		ORDER BY id_auditoria DESC
+		LIMIT 200`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var lista []models.EventoAuditoria
+	for rows.Next() {
+		var item models.EventoAuditoria
+		var fecha time.Time
+		if err := rows.Scan(&fecha, &item.Usuario, &item.Accion, &item.Detalle, &item.IP); err != nil {
+			return nil, err
+		}
+		item.Fecha = fecha.Format("2006-01-02 15:04")
+		lista = append(lista, item)
+	}
+	return lista, rows.Err()
+}
+
+func (r *AccesoRepository) Registrar(idUsuario, accion, detalle, ip string) error {
+	idUsuario = recortar(idUsuario, 12)
+	detalle = recortar(detalle, 400)
+	ip = recortar(ip, 64)
+	_, err := r.db.Exec(`
+		INSERT INTO seg_auditoria (id_usuario, accion, detalle, ip)
+		VALUES ($1, $2, $3, $4)`, idUsuario, accion, detalle, ip)
+	return err
+}
+
+func recortar(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	return s[:n]
+}
+
+func tienePermiso(db *sql.DB, idUsuario, codigo string) (bool, error) {
+	var ok bool
+	err := db.QueryRow(`
+		SELECT EXISTS (
+			SELECT 1
+			FROM seg_usuario_perfil up
+			JOIN seg_perfil p ON p.id_perfil = up.id_perfil AND p.estado = 'V'
+			JOIN seg_perfil_permiso pp ON pp.id_perfil = up.id_perfil AND pp.estado = 'V'
+			WHERE up.id_usuario = $1
+			  AND up.estado = 'V'
+			  AND pp.codigo_permiso = $2
+		)`, idUsuario, codigo).Scan(&ok)
+	return ok, err
+}
+
+func reemplazarPermisos(tx *sql.Tx, idPerfil int, permisos []string, mantenerAdmin bool) error {
+	if _, err := tx.Exec(`UPDATE seg_perfil_permiso SET estado = 'E' WHERE id_perfil = $1 AND estado = 'V'`, idPerfil); err != nil {
+		return err
+	}
+	vistos := map[string]bool{}
+	var modulos []string
+	for _, codigo := range permisos {
+		codigo = strings.TrimSpace(codigo)
+		if codigo == "" || vistos[codigo] {
+			continue
+		}
+		vistos[codigo] = true
+		var modulo string
+		if err := tx.QueryRow(`SELECT codigo_modulo FROM seg_permiso WHERE codigo = $1`, codigo).Scan(&modulo); err != nil {
+			return ErrDatos
+		}
+		modulos = append(modulos, modulo)
+		if _, err := tx.Exec(`
+			INSERT INTO seg_perfil_permiso (id_perfil, codigo_permiso, estado)
+			VALUES ($1, $2, 'V')
+			ON CONFLICT (id_perfil, codigo_permiso) DO UPDATE SET estado = 'V'`, idPerfil, codigo); err != nil {
+			return err
+		}
+	}
+	if mantenerAdmin {
+		modulos = asegurar(modulos, "administracion")
+	}
+	return reemplazarModulos(tx, idPerfil, modulos, mantenerAdmin)
+}
+
+func reemplazarAmbitos(tx *sql.Tx, idPerfil int, deptos, etapas []int) error {
+	if _, err := tx.Exec(`UPDATE seg_perfil_ambito SET estado = 'E' WHERE id_perfil = $1 AND estado = 'V'`, idPerfil); err != nil {
+		return err
+	}
+	if err := insertarAmbitos(tx, idPerfil, "departamento", deptos); err != nil {
+		return err
+	}
+	return insertarAmbitos(tx, idPerfil, "etapa", etapas)
+}
+
+func insertarAmbitos(tx *sql.Tx, idPerfil int, tipo string, refs []int) error {
+	vistos := map[int]bool{}
+	for _, id := range refs {
+		if id <= 0 || vistos[id] {
+			continue
+		}
+		vistos[id] = true
+		if _, err := tx.Exec(`
+			INSERT INTO seg_perfil_ambito (id_perfil, tipo, referencia, estado)
+			VALUES ($1, $2, $3, 'V')
+			ON CONFLICT (id_perfil, tipo, referencia) DO UPDATE SET estado = 'V'`, idPerfil, tipo, id); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func validarFichaYAmbito(tx *sql.Tx, idUsuario string, idEmpleado int, perfiles []int) error {
+	depto := 0
+	if idEmpleado > 0 {
+		err := tx.QueryRow(`
+			SELECT COALESCE(depto, 0)
+			FROM gen_directorio
+			WHERE id_empleado = $1
+			  AND COALESCE(nullif(btrim(estado), ''), 'V') = 'V'`, idEmpleado).Scan(&depto)
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrEmpleado
+		}
+		if err != nil {
+			return err
+		}
+		var ocupada bool
+		if err := tx.QueryRow(`
+			SELECT EXISTS (
+				SELECT 1 FROM gen_usuario WHERE id_empleado = $1 AND id_usuario <> $2
+			)`, idEmpleado, idUsuario).Scan(&ocupada); err != nil {
+			return err
+		}
+		if ocupada {
+			return ErrFichaOcupada
+		}
+	}
+	if len(perfiles) == 0 {
+		return nil
+	}
+	var pideFicha bool
+	if err := tx.QueryRow(`
+		SELECT EXISTS (
+			SELECT 1 FROM seg_perfil_permiso
+			WHERE id_perfil = ANY($1) AND estado = 'V' AND codigo_permiso LIKE 'formularios.%'
+		)`, pq.Array(perfiles)).Scan(&pideFicha); err != nil {
+		return err
+	}
+	if pideFicha && idEmpleado == 0 {
+		return ErrFichaRequerida
+	}
+	for _, idPerfil := range perfiles {
+		if idPerfil <= 0 {
+			continue
+		}
+		var libre bool
+		if err := tx.QueryRow(`
+			SELECT EXISTS (
+				SELECT 1 FROM seg_perfil_permiso
+				WHERE id_perfil = $1 AND estado = 'V'
+				  AND codigo_permiso IN ('formularios.mantener', 'administracion.mantener')
+			)`, idPerfil).Scan(&libre); err != nil {
+			return err
+		}
+		if libre {
+			continue
+		}
+		deptos, err := ambitosTx(tx, idPerfil, "departamento")
+		if err != nil {
+			return err
+		}
+		if len(deptos) > 0 && (idEmpleado == 0 || !contiene(deptos, depto)) {
+			return ErrAmbito
+		}
+		etapas, err := ambitosTx(tx, idPerfil, "etapa")
+		if err != nil {
+			return err
+		}
+		if len(etapas) == 0 {
+			continue
+		}
+		var enCentro bool
+		if err := tx.QueryRow(`
+			SELECT EXISTS (
+				SELECT 1 FROM cor_usuario_etapa
+				WHERE id_usuario = $1 AND cod_etapa = ANY($2)
+			)`, idUsuario, pq.Array(etapas)).Scan(&enCentro); err != nil {
+			return err
+		}
+		if !enCentro {
+			return ErrAmbito
+		}
+	}
+	return nil
+}
+
+func ambitosTx(tx *sql.Tx, idPerfil int, tipo string) ([]int, error) {
+	rows, err := tx.Query(`
+		SELECT referencia FROM seg_perfil_ambito
+		WHERE id_perfil = $1 AND tipo = $2 AND estado = 'V'`, idPerfil, tipo)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var ids []int
+	for rows.Next() {
+		var n int
+		if err := rows.Scan(&n); err != nil {
+			return nil, err
+		}
+		ids = append(ids, n)
+	}
+	return ids, rows.Err()
+}
+
+func contiene(lista []int, n int) bool {
+	for _, v := range lista {
+		if v == n {
+			return true
+		}
+	}
+	return false
+}
+
 func asegurar(lista []string, item string) []string {
 	for _, v := range lista {
 		if v == item {
@@ -543,6 +1015,9 @@ func traducirError(err error) error {
 	if errors.As(err, &pqErr) {
 		switch pqErr.Code {
 		case "23505":
+			if pqErr.Constraint == "gen_usuario_empleado_key" {
+				return ErrFichaOcupada
+			}
 			return ErrDuplicado
 		case "23503":
 			return ErrDatos

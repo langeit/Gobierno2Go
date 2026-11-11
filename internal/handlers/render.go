@@ -33,6 +33,9 @@ func templateFuncs() template.FuncMap {
 		"pct": func(v float64) string {
 			return fmt.Sprintf("%.2f%%", v)
 		},
+		"add": func(a, b int) int {
+			return a + b
+		},
 	}
 }
 

@@ -20,11 +20,25 @@ func TestActualizarUsuario(t *testing.T) {
 		db.Exec(`DELETE FROM gen_usuario WHERE id_usuario = $1`, login)
 	})
 	db.Exec(`DELETE FROM gen_usuario WHERE id_usuario = $1`, login)
-	if err := repo.CrearUsuario(login, "clave-inicial", "Nombre inicial", nil); err != nil {
+	if err := repo.EnsureSchema(); err != nil {
+		t.Fatal(err)
+	}
+	var idEmp int
+	if err := db.QueryRow(`
+		INSERT INTO gen_directorio (nombre, apellido, email, estado)
+		VALUES ('Prueba', 'Acceso', 'acceso-test@example.com', 'V')
+		RETURNING id_empleado`).Scan(&idEmp); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		db.Exec(`UPDATE gen_usuario SET id_empleado = NULL WHERE id_empleado = $1`, idEmp)
+		db.Exec(`DELETE FROM gen_directorio WHERE id_empleado = $1`, idEmp)
+	})
+	if err := repo.CrearUsuario(login, "clave-inicial", "Nombre inicial", 0, nil); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := repo.ActualizarUsuario(login, "Nombre editado", "1", "clave-nueva", 1, nil); err != nil {
+	if err := repo.ActualizarUsuario(login, "Nombre editado", "1", "clave-nueva", idEmp, nil); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := users.Login(login, "clave-inicial"); err == nil {
@@ -42,7 +56,7 @@ func TestActualizarUsuario(t *testing.T) {
 	if err := db.QueryRow(`SELECT id_empleado FROM gen_usuario WHERE id_usuario = $1`, login).Scan(&empleado); err != nil {
 		t.Fatal(err)
 	}
-	if empleado != 1 {
+	if empleado != idEmp {
 		t.Fatalf("empleado = %d", empleado)
 	}
 

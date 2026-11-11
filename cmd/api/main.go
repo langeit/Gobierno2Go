@@ -36,6 +36,7 @@ func main() {
 	if err := accesoRepo.EnsureSchema(); err != nil {
 		log.Fatalf("Error preparando perfiles de acceso: %v", err)
 	}
+	tablaRepo := repository.NewTablaRepository(db)
 	adquisicionesRepo := repository.NewAdquisicionesRepository(db)
 	if err := adquisicionesRepo.EnsureSchema(); err != nil {
 		log.Fatalf("Error preparando mantenedores de adquisiciones: %v", err)
@@ -46,13 +47,14 @@ func main() {
 
 	sessions := session.NewManager()
 
-	loginHandler := handlers.NewLoginHandler(userRepo, sessions)
+	loginHandler := handlers.NewLoginHandler(userRepo, accesoRepo, sessions)
 	pageHandler := handlers.NewPageHandler("internal/templates")
 	correspondenciaHandler := handlers.NewCorrespondenciaHandler(docRepo, catalogRepo, userRepo, "internal/templates")
 	formularioHandler := handlers.NewFormularioHandler(formularioRepo, "internal/templates")
 	inventarioHandler := handlers.NewInventarioHandler(inventarioRepo, "internal/templates")
-	accesoHandler := handlers.NewAccesoHandler(accesoRepo, "internal/templates")
+	accesoHandler := handlers.NewAccesoHandler(accesoRepo, "internal/templates", sessions)
 	adquisicionesHandler := handlers.NewAdquisicionesHandler(adquisicionesRepo, "internal/templates")
+	basesHandler := handlers.NewBasesHandler(tablaRepo, "internal/templates")
 
 	r := chi.NewRouter()
 
@@ -80,8 +82,12 @@ func main() {
 	r.Group(func(r chi.Router) {
 		r.Use(session.RequireLogin)
 		r.Use(session.Enrich(accesoRepo.ModulosDeUsuario))
+		r.Use(session.EnrichPermisos(accesoRepo.PermisosDeUsuario))
+		r.Use(session.RequireClaveVigente)
 
 		r.Get("/logout", loginHandler.Logout)
+		r.Get("/cuenta/clave", loginHandler.ClavePage)
+		r.Post("/cuenta/clave", loginHandler.ClavePost)
 		r.Get("/dashboard", pageHandler.DashboardPage)
 
 		r.Group(func(r chi.Router) {
@@ -117,51 +123,58 @@ func main() {
 			r.Post("/formularios/feriado", formularioHandler.FeriadoPost)
 			r.Get("/formularios/administrativo", formularioHandler.AdministrativoPage)
 			r.Post("/formularios/administrativo", formularioHandler.AdministrativoPost)
-			r.Get("/formularios/personal/feriado", formularioHandler.PersonalFeriadoPage)
-			r.Post("/formularios/personal/feriado", formularioHandler.PersonalFeriadoPost)
-			r.Get("/formularios/personal/administrativo", formularioHandler.PersonalAdministrativoPage)
-			r.Post("/formularios/personal/administrativo", formularioHandler.PersonalAdministrativoPost)
 			r.Get("/formularios/listado", formularioHandler.ListadoPage)
 			r.Post("/formularios/eliminar", formularioHandler.EliminarPost)
-			r.Get("/formularios/aprobaciones", formularioHandler.AprobacionesPage)
-			r.Post("/formularios/aprobaciones", formularioHandler.AprobacionesPost)
 			r.Get("/formularios/acumulacion", formularioHandler.AcumulacionPage)
 			r.Post("/formularios/acumulacion", formularioHandler.AcumulacionPost)
-			r.Post("/formularios/acumulacion/aprobar", formularioHandler.AcumulacionAprobarPost)
-			r.Get("/formularios/admin", formularioHandler.AdminPage)
-			r.Get("/formularios/admin/asignacion", formularioHandler.AsignacionPage)
-			r.Post("/formularios/admin/asignacion", formularioHandler.AsignacionPost)
-			r.Get("/formularios/admin/jefes", formularioHandler.JefesPage)
-			r.Post("/formularios/admin/jefes", formularioHandler.JefesPost)
-			r.Get("/formularios/admin/trabajadores", formularioHandler.TrabajadoresAdminPage)
-			r.Get("/formularios/admin/trabajadores/nuevo", formularioHandler.TrabajadorNuevoPage)
-			r.Post("/formularios/admin/trabajadores/nuevo", formularioHandler.TrabajadorNuevoPost)
-			r.Get("/formularios/admin/trabajadores/{id}", func(w http.ResponseWriter, r *http.Request) {
-				id, _ := strconv.Atoi(chi.URLParam(r, "id"))
-				formularioHandler.TrabajadorEditarPage(w, r, id)
+
+			r.Group(func(r chi.Router) {
+				r.Use(session.RequireAlgunProceso("formularios.aprobar", "formularios.mantener"))
+				r.Get("/formularios/aprobaciones", formularioHandler.AprobacionesPage)
+				r.Post("/formularios/aprobaciones", formularioHandler.AprobacionesPost)
 			})
-			r.Post("/formularios/admin/trabajadores/{id}", func(w http.ResponseWriter, r *http.Request) {
-				id, _ := strconv.Atoi(chi.URLParam(r, "id"))
-				formularioHandler.TrabajadorEditarPost(w, r, id)
-			})
-			r.Post("/formularios/admin/trabajadores/{id}/eliminar", func(w http.ResponseWriter, r *http.Request) {
-				id, _ := strconv.Atoi(chi.URLParam(r, "id"))
-				formularioHandler.TrabajadorEliminarPost(w, r, id)
-			})
-			r.Get("/formularios/admin/departamentos", formularioHandler.DepartamentosAdminPage)
-			r.Get("/formularios/admin/departamentos/nuevo", formularioHandler.DepartamentoNuevoPage)
-			r.Post("/formularios/admin/departamentos/nuevo", formularioHandler.DepartamentoNuevoPost)
-			r.Get("/formularios/admin/departamentos/{id}", func(w http.ResponseWriter, r *http.Request) {
-				id, _ := strconv.Atoi(chi.URLParam(r, "id"))
-				formularioHandler.DepartamentoEditarPage(w, r, id)
-			})
-			r.Post("/formularios/admin/departamentos/{id}", func(w http.ResponseWriter, r *http.Request) {
-				id, _ := strconv.Atoi(chi.URLParam(r, "id"))
-				formularioHandler.DepartamentoEditarPost(w, r, id)
-			})
-			r.Post("/formularios/admin/departamentos/{id}/eliminar", func(w http.ResponseWriter, r *http.Request) {
-				id, _ := strconv.Atoi(chi.URLParam(r, "id"))
-				formularioHandler.DepartamentoEliminarPost(w, r, id)
+			r.Group(func(r chi.Router) {
+				r.Use(session.RequireAlgunProceso("formularios.mantener"))
+				r.Get("/formularios/personal/feriado", formularioHandler.PersonalFeriadoPage)
+				r.Post("/formularios/personal/feriado", formularioHandler.PersonalFeriadoPost)
+				r.Get("/formularios/personal/administrativo", formularioHandler.PersonalAdministrativoPage)
+				r.Post("/formularios/personal/administrativo", formularioHandler.PersonalAdministrativoPost)
+				r.Post("/formularios/acumulacion/aprobar", formularioHandler.AcumulacionAprobarPost)
+				r.Get("/formularios/admin", formularioHandler.AdminPage)
+				r.Get("/formularios/admin/asignacion", formularioHandler.AsignacionPage)
+				r.Post("/formularios/admin/asignacion", formularioHandler.AsignacionPost)
+				r.Get("/formularios/admin/jefes", formularioHandler.JefesPage)
+				r.Post("/formularios/admin/jefes", formularioHandler.JefesPost)
+				r.Get("/formularios/admin/trabajadores", formularioHandler.TrabajadoresAdminPage)
+				r.Get("/formularios/admin/trabajadores/nuevo", formularioHandler.TrabajadorNuevoPage)
+				r.Post("/formularios/admin/trabajadores/nuevo", formularioHandler.TrabajadorNuevoPost)
+				r.Get("/formularios/admin/trabajadores/{id}", func(w http.ResponseWriter, r *http.Request) {
+					id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+					formularioHandler.TrabajadorEditarPage(w, r, id)
+				})
+				r.Post("/formularios/admin/trabajadores/{id}", func(w http.ResponseWriter, r *http.Request) {
+					id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+					formularioHandler.TrabajadorEditarPost(w, r, id)
+				})
+				r.Post("/formularios/admin/trabajadores/{id}/eliminar", func(w http.ResponseWriter, r *http.Request) {
+					id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+					formularioHandler.TrabajadorEliminarPost(w, r, id)
+				})
+				r.Get("/formularios/admin/departamentos", formularioHandler.DepartamentosAdminPage)
+				r.Get("/formularios/admin/departamentos/nuevo", formularioHandler.DepartamentoNuevoPage)
+				r.Post("/formularios/admin/departamentos/nuevo", formularioHandler.DepartamentoNuevoPost)
+				r.Get("/formularios/admin/departamentos/{id}", func(w http.ResponseWriter, r *http.Request) {
+					id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+					formularioHandler.DepartamentoEditarPage(w, r, id)
+				})
+				r.Post("/formularios/admin/departamentos/{id}", func(w http.ResponseWriter, r *http.Request) {
+					id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+					formularioHandler.DepartamentoEditarPost(w, r, id)
+				})
+				r.Post("/formularios/admin/departamentos/{id}/eliminar", func(w http.ResponseWriter, r *http.Request) {
+					id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+					formularioHandler.DepartamentoEliminarPost(w, r, id)
+				})
 			})
 		})
 
@@ -205,110 +218,116 @@ func main() {
 			r.Get("/inventario/reportes/depreciacion", inventarioHandler.ReporteDepreciacionPage)
 			r.Get("/inventario/reportes/depreciacion/detalle", inventarioHandler.ReporteDepreciacionDetallePage)
 
-			r.Get("/inventario/admin", inventarioHandler.AdminPage)
-			r.Post("/inventario/admin/tipo-bien", inventarioHandler.AdminTipoBienPost)
-			r.Post("/inventario/admin/zona", inventarioHandler.AdminZonaPost)
+			r.Group(func(r chi.Router) {
+				r.Use(session.RequireAlgunProceso("inventario.mantener"))
+				r.Get("/inventario/admin", inventarioHandler.AdminPage)
+				r.Post("/inventario/admin/tipo-bien", inventarioHandler.AdminTipoBienPost)
+				r.Post("/inventario/admin/zona", inventarioHandler.AdminZonaPost)
+			})
 		})
 
 		r.Group(func(r chi.Router) {
 			r.Use(session.RequireModule("adquisiciones"))
 			r.Get("/adquisiciones", adquisicionesHandler.MenuPage)
-			r.Get("/adquisiciones/mantenedores", adquisicionesHandler.MantenedoresPage)
+			r.Group(func(r chi.Router) {
+				r.Use(session.RequireAlgunProceso("adquisiciones.mantener"))
+				r.Get("/adquisiciones/mantenedores", adquisicionesHandler.MantenedoresPage)
 
-			r.Get("/adquisiciones/mantenedores/tipos-dominio", adquisicionesHandler.TiposPage)
-			r.Get("/adquisiciones/mantenedores/tipos-dominio/nuevo", adquisicionesHandler.TipoNuevoPage)
-			r.Post("/adquisiciones/mantenedores/tipos-dominio/nuevo", adquisicionesHandler.TipoNuevoPost)
-			r.Get("/adquisiciones/mantenedores/tipos-dominio/{id}", func(w http.ResponseWriter, r *http.Request) {
-				id, _ := strconv.Atoi(chi.URLParam(r, "id"))
-				adquisicionesHandler.TipoVerPage(w, r, id)
-			})
-			r.Get("/adquisiciones/mantenedores/tipos-dominio/{id}/editar", func(w http.ResponseWriter, r *http.Request) {
-				id, _ := strconv.Atoi(chi.URLParam(r, "id"))
-				adquisicionesHandler.TipoEditarPage(w, r, id)
-			})
-			r.Post("/adquisiciones/mantenedores/tipos-dominio/{id}", func(w http.ResponseWriter, r *http.Request) {
-				id, _ := strconv.Atoi(chi.URLParam(r, "id"))
-				adquisicionesHandler.TipoEditarPost(w, r, id)
-			})
-			r.Post("/adquisiciones/mantenedores/tipos-dominio/{id}/eliminar", func(w http.ResponseWriter, r *http.Request) {
-				id, _ := strconv.Atoi(chi.URLParam(r, "id"))
-				adquisicionesHandler.TipoEliminarPost(w, r, id)
-			})
+				r.Get("/adquisiciones/mantenedores/tipos-dominio", adquisicionesHandler.TiposPage)
+				r.Get("/adquisiciones/mantenedores/tipos-dominio/nuevo", adquisicionesHandler.TipoNuevoPage)
+				r.Post("/adquisiciones/mantenedores/tipos-dominio/nuevo", adquisicionesHandler.TipoNuevoPost)
+				r.Get("/adquisiciones/mantenedores/tipos-dominio/{id}", func(w http.ResponseWriter, r *http.Request) {
+					id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+					adquisicionesHandler.TipoVerPage(w, r, id)
+				})
+				r.Get("/adquisiciones/mantenedores/tipos-dominio/{id}/editar", func(w http.ResponseWriter, r *http.Request) {
+					id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+					adquisicionesHandler.TipoEditarPage(w, r, id)
+				})
+				r.Post("/adquisiciones/mantenedores/tipos-dominio/{id}", func(w http.ResponseWriter, r *http.Request) {
+					id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+					adquisicionesHandler.TipoEditarPost(w, r, id)
+				})
+				r.Post("/adquisiciones/mantenedores/tipos-dominio/{id}/eliminar", func(w http.ResponseWriter, r *http.Request) {
+					id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+					adquisicionesHandler.TipoEliminarPost(w, r, id)
+				})
 
-			r.Get("/adquisiciones/mantenedores/dominios", adquisicionesHandler.DominiosPage)
-			r.Get("/adquisiciones/mantenedores/dominios/nuevo", adquisicionesHandler.DominioNuevoPage)
-			r.Post("/adquisiciones/mantenedores/dominios/nuevo", adquisicionesHandler.DominioNuevoPost)
-			r.Get("/adquisiciones/mantenedores/dominios/{id}", func(w http.ResponseWriter, r *http.Request) {
-				id, _ := strconv.Atoi(chi.URLParam(r, "id"))
-				adquisicionesHandler.DominioVerPage(w, r, id)
-			})
-			r.Get("/adquisiciones/mantenedores/dominios/{id}/editar", func(w http.ResponseWriter, r *http.Request) {
-				id, _ := strconv.Atoi(chi.URLParam(r, "id"))
-				adquisicionesHandler.DominioEditarPage(w, r, id)
-			})
-			r.Post("/adquisiciones/mantenedores/dominios/{id}", func(w http.ResponseWriter, r *http.Request) {
-				id, _ := strconv.Atoi(chi.URLParam(r, "id"))
-				adquisicionesHandler.DominioEditarPost(w, r, id)
-			})
-			r.Post("/adquisiciones/mantenedores/dominios/{id}/eliminar", func(w http.ResponseWriter, r *http.Request) {
-				id, _ := strconv.Atoi(chi.URLParam(r, "id"))
-				adquisicionesHandler.DominioEliminarPost(w, r, id)
-			})
+				r.Get("/adquisiciones/mantenedores/dominios", adquisicionesHandler.DominiosPage)
+				r.Get("/adquisiciones/mantenedores/dominios/nuevo", adquisicionesHandler.DominioNuevoPage)
+				r.Post("/adquisiciones/mantenedores/dominios/nuevo", adquisicionesHandler.DominioNuevoPost)
+				r.Get("/adquisiciones/mantenedores/dominios/{id}", func(w http.ResponseWriter, r *http.Request) {
+					id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+					adquisicionesHandler.DominioVerPage(w, r, id)
+				})
+				r.Get("/adquisiciones/mantenedores/dominios/{id}/editar", func(w http.ResponseWriter, r *http.Request) {
+					id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+					adquisicionesHandler.DominioEditarPage(w, r, id)
+				})
+				r.Post("/adquisiciones/mantenedores/dominios/{id}", func(w http.ResponseWriter, r *http.Request) {
+					id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+					adquisicionesHandler.DominioEditarPost(w, r, id)
+				})
+				r.Post("/adquisiciones/mantenedores/dominios/{id}/eliminar", func(w http.ResponseWriter, r *http.Request) {
+					id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+					adquisicionesHandler.DominioEliminarPost(w, r, id)
+				})
 
-			r.Get("/adquisiciones/mantenedores/materiales", adquisicionesHandler.MaterialesPage)
-			r.Get("/adquisiciones/mantenedores/materiales/nuevo", adquisicionesHandler.MaterialNuevoPage)
-			r.Post("/adquisiciones/mantenedores/materiales/nuevo", adquisicionesHandler.MaterialNuevoPost)
-			r.Get("/adquisiciones/mantenedores/materiales/{id}", func(w http.ResponseWriter, r *http.Request) {
-				id, _ := strconv.Atoi(chi.URLParam(r, "id"))
-				adquisicionesHandler.MaterialVerPage(w, r, id)
-			})
-			r.Get("/adquisiciones/mantenedores/materiales/{id}/editar", func(w http.ResponseWriter, r *http.Request) {
-				id, _ := strconv.Atoi(chi.URLParam(r, "id"))
-				adquisicionesHandler.MaterialEditarPage(w, r, id)
-			})
-			r.Post("/adquisiciones/mantenedores/materiales/{id}", func(w http.ResponseWriter, r *http.Request) {
-				id, _ := strconv.Atoi(chi.URLParam(r, "id"))
-				adquisicionesHandler.MaterialEditarPost(w, r, id)
-			})
-			r.Post("/adquisiciones/mantenedores/materiales/{id}/eliminar", func(w http.ResponseWriter, r *http.Request) {
-				id, _ := strconv.Atoi(chi.URLParam(r, "id"))
-				adquisicionesHandler.MaterialEliminarPost(w, r, id)
-			})
+				r.Get("/adquisiciones/mantenedores/materiales", adquisicionesHandler.MaterialesPage)
+				r.Get("/adquisiciones/mantenedores/materiales/nuevo", adquisicionesHandler.MaterialNuevoPage)
+				r.Post("/adquisiciones/mantenedores/materiales/nuevo", adquisicionesHandler.MaterialNuevoPost)
+				r.Get("/adquisiciones/mantenedores/materiales/{id}", func(w http.ResponseWriter, r *http.Request) {
+					id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+					adquisicionesHandler.MaterialVerPage(w, r, id)
+				})
+				r.Get("/adquisiciones/mantenedores/materiales/{id}/editar", func(w http.ResponseWriter, r *http.Request) {
+					id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+					adquisicionesHandler.MaterialEditarPage(w, r, id)
+				})
+				r.Post("/adquisiciones/mantenedores/materiales/{id}", func(w http.ResponseWriter, r *http.Request) {
+					id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+					adquisicionesHandler.MaterialEditarPost(w, r, id)
+				})
+				r.Post("/adquisiciones/mantenedores/materiales/{id}/eliminar", func(w http.ResponseWriter, r *http.Request) {
+					id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+					adquisicionesHandler.MaterialEliminarPost(w, r, id)
+				})
 
-			r.Get("/adquisiciones/mantenedores/proveedores", adquisicionesHandler.ProveedoresPage)
-			r.Get("/adquisiciones/mantenedores/proveedores/nuevo", adquisicionesHandler.ProveedorNuevoPage)
-			r.Post("/adquisiciones/mantenedores/proveedores/nuevo", adquisicionesHandler.ProveedorNuevoPost)
-			r.Get("/adquisiciones/mantenedores/proveedores/{rut}", func(w http.ResponseWriter, r *http.Request) {
-				adquisicionesHandler.ProveedorVerPage(w, r, chi.URLParam(r, "rut"))
-			})
-			r.Get("/adquisiciones/mantenedores/proveedores/{rut}/editar", func(w http.ResponseWriter, r *http.Request) {
-				adquisicionesHandler.ProveedorEditarPage(w, r, chi.URLParam(r, "rut"))
-			})
-			r.Post("/adquisiciones/mantenedores/proveedores/{rut}", func(w http.ResponseWriter, r *http.Request) {
-				adquisicionesHandler.ProveedorEditarPost(w, r, chi.URLParam(r, "rut"))
-			})
-			r.Post("/adquisiciones/mantenedores/proveedores/{rut}/eliminar", func(w http.ResponseWriter, r *http.Request) {
-				adquisicionesHandler.ProveedorEliminarPost(w, r, chi.URLParam(r, "rut"))
-			})
+				r.Get("/adquisiciones/mantenedores/proveedores", adquisicionesHandler.ProveedoresPage)
+				r.Get("/adquisiciones/mantenedores/proveedores/nuevo", adquisicionesHandler.ProveedorNuevoPage)
+				r.Post("/adquisiciones/mantenedores/proveedores/nuevo", adquisicionesHandler.ProveedorNuevoPost)
+				r.Get("/adquisiciones/mantenedores/proveedores/{rut}", func(w http.ResponseWriter, r *http.Request) {
+					adquisicionesHandler.ProveedorVerPage(w, r, chi.URLParam(r, "rut"))
+				})
+				r.Get("/adquisiciones/mantenedores/proveedores/{rut}/editar", func(w http.ResponseWriter, r *http.Request) {
+					adquisicionesHandler.ProveedorEditarPage(w, r, chi.URLParam(r, "rut"))
+				})
+				r.Post("/adquisiciones/mantenedores/proveedores/{rut}", func(w http.ResponseWriter, r *http.Request) {
+					adquisicionesHandler.ProveedorEditarPost(w, r, chi.URLParam(r, "rut"))
+				})
+				r.Post("/adquisiciones/mantenedores/proveedores/{rut}/eliminar", func(w http.ResponseWriter, r *http.Request) {
+					adquisicionesHandler.ProveedorEliminarPost(w, r, chi.URLParam(r, "rut"))
+				})
 
-			r.Get("/adquisiciones/mantenedores/asignaciones", adquisicionesHandler.AsignacionesPage)
-			r.Get("/adquisiciones/mantenedores/asignaciones/nuevo", adquisicionesHandler.AsignacionNuevaPage)
-			r.Post("/adquisiciones/mantenedores/asignaciones/nuevo", adquisicionesHandler.AsignacionNuevaPost)
-			r.Get("/adquisiciones/mantenedores/asignaciones/{id}", func(w http.ResponseWriter, r *http.Request) {
-				id, _ := strconv.Atoi(chi.URLParam(r, "id"))
-				adquisicionesHandler.AsignacionVerPage(w, r, id)
-			})
-			r.Get("/adquisiciones/mantenedores/asignaciones/{id}/editar", func(w http.ResponseWriter, r *http.Request) {
-				id, _ := strconv.Atoi(chi.URLParam(r, "id"))
-				adquisicionesHandler.AsignacionEditarPage(w, r, id)
-			})
-			r.Post("/adquisiciones/mantenedores/asignaciones/{id}", func(w http.ResponseWriter, r *http.Request) {
-				id, _ := strconv.Atoi(chi.URLParam(r, "id"))
-				adquisicionesHandler.AsignacionEditarPost(w, r, id)
-			})
-			r.Post("/adquisiciones/mantenedores/asignaciones/{id}/eliminar", func(w http.ResponseWriter, r *http.Request) {
-				id, _ := strconv.Atoi(chi.URLParam(r, "id"))
-				adquisicionesHandler.AsignacionEliminarPost(w, r, id)
+				r.Get("/adquisiciones/mantenedores/asignaciones", adquisicionesHandler.AsignacionesPage)
+				r.Get("/adquisiciones/mantenedores/asignaciones/nuevo", adquisicionesHandler.AsignacionNuevaPage)
+				r.Post("/adquisiciones/mantenedores/asignaciones/nuevo", adquisicionesHandler.AsignacionNuevaPost)
+				r.Get("/adquisiciones/mantenedores/asignaciones/{id}", func(w http.ResponseWriter, r *http.Request) {
+					id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+					adquisicionesHandler.AsignacionVerPage(w, r, id)
+				})
+				r.Get("/adquisiciones/mantenedores/asignaciones/{id}/editar", func(w http.ResponseWriter, r *http.Request) {
+					id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+					adquisicionesHandler.AsignacionEditarPage(w, r, id)
+				})
+				r.Post("/adquisiciones/mantenedores/asignaciones/{id}", func(w http.ResponseWriter, r *http.Request) {
+					id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+					adquisicionesHandler.AsignacionEditarPost(w, r, id)
+				})
+				r.Post("/adquisiciones/mantenedores/asignaciones/{id}/eliminar", func(w http.ResponseWriter, r *http.Request) {
+					id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+					adquisicionesHandler.AsignacionEliminarPost(w, r, id)
+				})
 			})
 
 			r.Get("/adquisiciones/ordenes", adquisicionesHandler.OrdenesPage)
@@ -355,21 +374,24 @@ func main() {
 				id, _ := strconv.Atoi(chi.URLParam(r, "id"))
 				adquisicionesHandler.SolicitudVerPage(w, r, id)
 			})
-			r.Get("/adquisiciones/solicitudes/{id}/aprobar", func(w http.ResponseWriter, r *http.Request) {
-				id, _ := strconv.Atoi(chi.URLParam(r, "id"))
-				adquisicionesHandler.SolicitudAprobarPage(w, r, id)
-			})
-			r.Post("/adquisiciones/solicitudes/{id}/aprobar", func(w http.ResponseWriter, r *http.Request) {
-				id, _ := strconv.Atoi(chi.URLParam(r, "id"))
-				adquisicionesHandler.SolicitudAprobarPost(w, r, id)
-			})
-			r.Get("/adquisiciones/solicitudes/{id}/entregar", func(w http.ResponseWriter, r *http.Request) {
-				id, _ := strconv.Atoi(chi.URLParam(r, "id"))
-				adquisicionesHandler.SolicitudEntregarPage(w, r, id)
-			})
-			r.Post("/adquisiciones/solicitudes/{id}/entregar", func(w http.ResponseWriter, r *http.Request) {
-				id, _ := strconv.Atoi(chi.URLParam(r, "id"))
-				adquisicionesHandler.SolicitudEntregarPost(w, r, id)
+			r.Group(func(r chi.Router) {
+				r.Use(session.RequireAlgunProceso("adquisiciones.aprobar"))
+				r.Get("/adquisiciones/solicitudes/{id}/aprobar", func(w http.ResponseWriter, r *http.Request) {
+					id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+					adquisicionesHandler.SolicitudAprobarPage(w, r, id)
+				})
+				r.Post("/adquisiciones/solicitudes/{id}/aprobar", func(w http.ResponseWriter, r *http.Request) {
+					id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+					adquisicionesHandler.SolicitudAprobarPost(w, r, id)
+				})
+				r.Get("/adquisiciones/solicitudes/{id}/entregar", func(w http.ResponseWriter, r *http.Request) {
+					id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+					adquisicionesHandler.SolicitudEntregarPage(w, r, id)
+				})
+				r.Post("/adquisiciones/solicitudes/{id}/entregar", func(w http.ResponseWriter, r *http.Request) {
+					id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+					adquisicionesHandler.SolicitudEntregarPost(w, r, id)
+				})
 			})
 
 			r.Get("/adquisiciones/reportes", adquisicionesHandler.ReportesPage)
@@ -412,6 +434,22 @@ func main() {
 			r.Post("/admin/usuarios/{id}", func(w http.ResponseWriter, r *http.Request) {
 				accesoHandler.UsuarioPost(w, r, chi.URLParam(r, "id"))
 			})
+			r.Get("/admin/permisos", accesoHandler.PermisosPage)
+			r.Get("/admin/auditoria", accesoHandler.AuditoriaPage)
+
+			r.Get("/bases", basesHandler.MenuPage)
+			r.Get("/bases/tablas/{codigo}", basesHandler.OpcionPage)
+			r.Get("/bases/tablas/{codigo}/nuevo", basesHandler.NuevoPage)
+			r.Post("/bases/tablas/{codigo}/nuevo", basesHandler.NuevoPost)
+			r.Get("/bases/tablas/{codigo}/editar", basesHandler.EditarPage)
+			r.Post("/bases/tablas/{codigo}/editar", basesHandler.EditarPost)
+			r.Post("/bases/tablas/{codigo}/eliminar", basesHandler.EliminarPost)
+			r.Get("/bases/tablas/{codigo}/hijos", basesHandler.HijosPage)
+			r.Get("/bases/tablas/{codigo}/hijos/nuevo", basesHandler.HijoNuevoPage)
+			r.Post("/bases/tablas/{codigo}/hijos/nuevo", basesHandler.HijoNuevoPost)
+			r.Get("/bases/tablas/{codigo}/hijos/editar", basesHandler.HijoEditarPage)
+			r.Post("/bases/tablas/{codigo}/hijos/editar", basesHandler.HijoEditarPost)
+			r.Post("/bases/tablas/{codigo}/hijos/eliminar", basesHandler.HijoEliminarPost)
 		})
 	})
 

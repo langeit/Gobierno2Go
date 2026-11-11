@@ -88,21 +88,23 @@ func (r *FormularioRepository) EmpleadoDeUsuario(idUsuario string, anho int) (mo
 
 // UsuarioInfo entrega el empleado, departamento y permisos del usuario.
 func (r *FormularioRepository) UsuarioInfo(idUsuario string) (idEmpleado, idDepto int, esPersonal, esAdmin bool, err error) {
-	var tipo string
 	err = r.db.QueryRow(`
-		SELECT COALESCE(u.id_empleado, 0), COALESCE(d.depto, 0), COALESCE(u.tipo, '3')
+		SELECT COALESCE(u.id_empleado, 0), COALESCE(d.depto, 0)
 		FROM gen_usuario u
 		LEFT JOIN gen_directorio d ON d.id_empleado = u.id_empleado
-		WHERE u.id_usuario = $1`, idUsuario).Scan(&idEmpleado, &idDepto, &tipo)
+		WHERE u.id_usuario = $1`, idUsuario).Scan(&idEmpleado, &idDepto)
 	if err != nil {
 		return 0, 0, false, false, err
 	}
-	esPersonal = idDepto == 17
-	adminSistema, errAdmin := esAdministradorDeSistema(r.db, idUsuario)
-	if errAdmin != nil {
-		return 0, 0, false, false, errAdmin
+	esPersonal, err = tienePermiso(r.db, idUsuario, "formularios.mantener")
+	if err != nil {
+		return 0, 0, false, false, err
 	}
-	esAdmin = tipo == "0" || esPersonal || adminSistema
+	adminSistema, err := esAdministradorDeSistema(r.db, idUsuario)
+	if err != nil {
+		return 0, 0, false, false, err
+	}
+	esAdmin = esPersonal || adminSistema
 	return idEmpleado, idDepto, esPersonal, esAdmin, nil
 }
 
@@ -215,9 +217,18 @@ WHERE dp.estado = 'V' AND dp.vbjefe = 'N' AND dp.fecha_resolucion IS NULL
           SELECT 1 FROM for_jefe_depto jd
           WHERE jd.id_depto = d.depto AND jd.id_empleado = d.id_empleado
             AND jd.aprueba_jefe = $1)
+    OR EXISTS (
+          SELECT 1
+          FROM seg_usuario_perfil up
+          JOIN seg_perfil pf ON pf.id_perfil = up.id_perfil AND pf.estado = 'V'
+          JOIN seg_perfil_permiso pp ON pp.id_perfil = up.id_perfil AND pp.estado = 'V'
+          JOIN seg_perfil_ambito a ON a.id_perfil = up.id_perfil AND a.estado = 'V'
+          WHERE up.id_usuario = $3 AND up.estado = 'V'
+            AND pp.codigo_permiso = 'formularios.aprobar'
+            AND a.tipo = 'departamento' AND a.referencia = d.depto)
   )
 ORDER BY dp.fecha_solicitud, dp.id_dpermiso`
-	rows, err := r.db.Query(query, idEmpleado, esAdmin || esPersonal)
+	rows, err := r.db.Query(query, idEmpleado, esAdmin || esPersonal, idUsuario)
 	if err != nil {
 		return nil, err
 	}
@@ -243,12 +254,17 @@ func (r *FormularioRepository) PuedeResolver(idUsuario string, idSolicitud int) 
 			JOIN for_dias_empleado de ON de.id_dias = dp.id_dias
 			JOIN gen_directorio d ON d.id_empleado = de.id_empleado
 			JOIN gen_usuario u ON u.id_usuario = $1
-			LEFT JOIN gen_directorio ud ON ud.id_empleado = u.id_empleado
 			WHERE dp.id_dpermiso = $2
 			  AND dp.estado = 'V'
 			  AND dp.vbjefe = 'N' AND dp.fecha_resolucion IS NULL
 			  AND (
-			    COALESCE(u.tipo, '3') = '0' OR COALESCE(ud.depto, 0) = 17
+			    EXISTS (
+			          SELECT 1
+			          FROM seg_usuario_perfil up
+			          JOIN seg_perfil p ON p.id_perfil = up.id_perfil AND p.estado = 'V'
+			          JOIN seg_perfil_permiso pp ON pp.id_perfil = up.id_perfil AND pp.estado = 'V'
+			          WHERE up.id_usuario = u.id_usuario AND up.estado = 'V'
+			            AND pp.codigo_permiso = 'formularios.mantener')
 			    OR EXISTS (
 			          SELECT 1
 			          FROM seg_usuario_perfil up
@@ -257,13 +273,30 @@ func (r *FormularioRepository) PuedeResolver(idUsuario string, idSolicitud int) 
 			          WHERE up.id_usuario = u.id_usuario
 			            AND up.estado = 'V'
 			            AND pm.codigo_modulo = 'administracion')
-			    OR (d.id_empleado <> COALESCE(u.id_empleado, 0) AND EXISTS (
-			          SELECT 1 FROM for_jefe_depto jd
-			          WHERE jd.id_depto = d.depto AND jd.id_empleado = u.id_empleado))
-			    OR EXISTS (
-			          SELECT 1 FROM for_jefe_depto jd
-			          WHERE jd.id_depto = d.depto AND jd.id_empleado = d.id_empleado
-			            AND jd.aprueba_jefe = u.id_empleado)
+			    OR (
+			          EXISTS (
+			                SELECT 1
+			                FROM seg_usuario_perfil up
+			                JOIN seg_perfil p ON p.id_perfil = up.id_perfil AND p.estado = 'V'
+			                JOIN seg_perfil_permiso pp ON pp.id_perfil = up.id_perfil AND pp.estado = 'V'
+			                WHERE up.id_usuario = u.id_usuario AND up.estado = 'V'
+			                  AND pp.codigo_permiso = 'formularios.aprobar')
+			          AND (
+			                (d.id_empleado <> COALESCE(u.id_empleado, 0) AND EXISTS (
+			                      SELECT 1 FROM for_jefe_depto jd
+			                      WHERE jd.id_depto = d.depto AND jd.id_empleado = u.id_empleado))
+			                OR EXISTS (
+			                      SELECT 1 FROM for_jefe_depto jd
+			                      WHERE jd.id_depto = d.depto AND jd.id_empleado = d.id_empleado
+			                        AND jd.aprueba_jefe = u.id_empleado)
+			                OR EXISTS (
+			                      SELECT 1
+			                      FROM seg_usuario_perfil up
+			                      JOIN seg_perfil_ambito a ON a.id_perfil = up.id_perfil AND a.estado = 'V'
+			                      WHERE up.id_usuario = u.id_usuario AND up.estado = 'V'
+			                        AND a.tipo = 'departamento' AND a.referencia = d.depto)
+			          )
+			    )
 			  )
 		)`, idUsuario, idSolicitud).Scan(&existe)
 	return existe, err

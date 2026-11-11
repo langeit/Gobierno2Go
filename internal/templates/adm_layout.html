@@ -21,6 +21,8 @@
             <a href="/admin" class="block px-4 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white transition">Menú principal</a>
             <a href="/admin/perfiles" class="block px-4 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white transition">Perfiles</a>
             <a href="/admin/usuarios" class="block px-4 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white transition">Usuarios</a>
+            <a href="/admin/permisos" class="block px-4 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white transition">Permisos efectivos</a>
+            <a href="/admin/auditoria" class="block px-4 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white transition">Auditoría</a>
             <div class="border-t border-slate-800 my-2"></div>
             <a href="/dashboard" class="block px-4 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white transition">← Panel general</a>
             <a href="/logout" class="block px-4 py-2.5 text-red-300 hover:bg-red-600 hover:text-white transition">Cerrar sesión</a>
@@ -29,13 +31,13 @@
 
     <div class="flex-1 md:ml-64 flex flex-col">
         <header class="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center shadow-sm">
-            <div class="flex items-center space-x-3">
-                <a href="/dashboard" class="text-slate-500 font-semibold text-sm hover:text-blue-600 hover:underline">Panel general</a>
-                <span class="text-gray-300">|</span>
-                <a href="/admin" class="text-blue-600 font-semibold text-sm hover:underline">Administración</a>
-                <span class="text-gray-300">|</span>
-                <span class="text-sm text-gray-600">{{.Title}}</span>
-            </div>
+            <nav class="flex items-center space-x-2 text-xs" aria-label="Breadcrumb">
+                <a href="/dashboard" class="text-slate-500 hover:text-blue-600 hover:underline">Panel general</a>
+                <span class="text-gray-300">›</span>
+                <a href="/admin" class="text-blue-600 font-medium hover:underline">Administración</a>
+                <span class="text-gray-300">›</span>
+                <span class="text-slate-800 font-semibold">{{.Title}}</span>
+            </nav>
             <div class="text-xs text-gray-500">{{if .User}}{{.User.Nombre}}{{end}}</div>
         </header>
 
@@ -52,4 +54,52 @@
     </div>
 </body>
 </html>
+{{end}}
+
+{{define "permisos_ambito"}}
+<p class="text-xs font-medium text-gray-600 mb-2">Procesos</p>
+<div class="space-y-4 mb-5">
+    {{range .Grupos}}
+    <div>
+        <p class="text-sm font-semibold text-slate-800 mb-1">{{.Nombre}}</p>
+        <div class="flex flex-wrap gap-3">
+            {{range .Permisos}}
+            <label class="flex items-center space-x-2 text-sm text-gray-700">
+                {{if and $.Perfil $.Perfil.Protegido (eq .Modulo "administracion")}}
+                <input type="checkbox" checked disabled class="mt-0.5">
+                <input type="hidden" name="permisos" value="{{.Codigo}}">
+                {{else}}
+                <input type="checkbox" name="permisos" value="{{.Codigo}}" class="mt-0.5" {{if and $.Perfil ($.Perfil.TienePermiso .Codigo)}}checked{{end}}>
+                {{end}}
+                <span>{{.Nombre}}</span>
+            </label>
+            {{end}}
+        </div>
+    </div>
+    {{end}}
+</div>
+<p class="text-xs font-medium text-gray-600 mb-1">Ámbito por departamento</p>
+<p class="text-xs text-gray-500 mb-2">Sin marcas, el perfil no limita por departamento. Mantener formularios o administración ignora este límite.</p>
+<div class="flex flex-wrap gap-3 mb-4">
+    {{range .Departamentos}}
+    <label class="flex items-center space-x-2 text-sm text-gray-700">
+        <input type="checkbox" name="ambitos_depto" value="{{.ID}}" {{if and $.Perfil ($.Perfil.TieneAmbito "departamento" .ID)}}checked{{end}}>
+        <span>{{.Nombre}}</span>
+    </label>
+    {{else}}
+    <span class="text-xs text-gray-500">No hay departamentos vigentes.</span>
+    {{end}}
+</div>
+<p class="text-xs font-medium text-gray-600 mb-1">Ámbito por centro de responsabilidad</p>
+<p class="text-xs text-gray-500 mb-2">Si marca centros, el usuario debe pertenecer a uno de ellos en correspondencia.</p>
+<div class="flex flex-wrap gap-3 mb-5">
+    {{range .Etapas}}
+    <label class="flex items-center space-x-2 text-sm text-gray-700">
+        <input type="checkbox" name="ambitos_etapa" value="{{.ID}}" {{if and $.Perfil ($.Perfil.TieneAmbito "etapa" .ID)}}checked{{end}}>
+        <span>{{.Nombre}}</span>
+    </label>
+    {{else}}
+    <span class="text-xs text-gray-500">No hay centros de responsabilidad.</span>
+    {{end}}
+</div>
 {{end}}

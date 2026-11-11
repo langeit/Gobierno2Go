@@ -108,15 +108,11 @@ func (r *InventarioRepository) UsuarioInfo(idUsuario string) (idEmpleado, idDept
 	return
 }
 
-// EsAdminInventario indica si el usuario pertenece a Adquisiciones, es administrador
-// legado o tiene el módulo de administración por sus perfiles.
+// EsAdminInventario indica si el usuario mantiene los catálogos de inventario.
 func (r *InventarioRepository) EsAdminInventario(idUsuario string) (bool, error) {
-	_, idDepto, tipo, err := r.UsuarioInfo(idUsuario)
-	if err != nil {
-		return false, err
-	}
-	if idDepto == 18 || tipo == "0" {
-		return true, nil
+	ok, err := tienePermiso(r.db, idUsuario, "inventario.mantener")
+	if err != nil || ok {
+		return ok, err
 	}
 	return esAdministradorDeSistema(r.db, idUsuario)
 }
@@ -749,9 +745,15 @@ func (r *InventarioRepository) SolicitudesPendientesJefe(idUsuario string) ([]mo
 			JOIN for_jefe_depto jd ON jd.id_depto = d.depto
 			JOIN gen_usuario u ON u.id_usuario = $1
 			WHERE us.id_usuario = s.usuario_sol
-			  AND (COALESCE(u.tipo, '3') = '0'
-			       OR jd.id_empleado = u.id_empleado
-			       OR jd.aprueba_jefe = u.id_empleado)
+			  AND (jd.id_empleado = u.id_empleado
+			       OR jd.aprueba_jefe = u.id_empleado
+			       OR EXISTS (
+			            SELECT 1
+			            FROM seg_usuario_perfil up
+			            JOIN seg_perfil p ON p.id_perfil = up.id_perfil AND p.estado = 'V'
+			            JOIN seg_perfil_modulo pm ON pm.id_perfil = up.id_perfil AND pm.estado = 'V'
+			            WHERE up.id_usuario = u.id_usuario AND up.estado = 'V'
+			              AND pm.codigo_modulo = 'administracion'))
 		)
 		ORDER BY s.fecha_solic, s.corr_solic`
 	rows, err := r.db.Query(query, idUsuario)
@@ -824,9 +826,15 @@ func (r *InventarioRepository) PuedeAprobarJefe(idUsuario string, idSolicitud in
 			JOIN for_jefe_depto jd ON jd.id_depto = d.depto
 			JOIN gen_usuario u ON u.id_usuario = $1
 			WHERE s.corr_solic = $2 AND s.estado_sol = 'P'
-			  AND (COALESCE(u.tipo, '3') = '0'
-			       OR jd.id_empleado = u.id_empleado
-			       OR jd.aprueba_jefe = u.id_empleado)
+			  AND (jd.id_empleado = u.id_empleado
+			       OR jd.aprueba_jefe = u.id_empleado
+			       OR EXISTS (
+			            SELECT 1
+			            FROM seg_usuario_perfil up
+			            JOIN seg_perfil p ON p.id_perfil = up.id_perfil AND p.estado = 'V'
+			            JOIN seg_perfil_modulo pm ON pm.id_perfil = up.id_perfil AND pm.estado = 'V'
+			            WHERE up.id_usuario = u.id_usuario AND up.estado = 'V'
+			              AND pm.codigo_modulo = 'administracion'))
 		)`, idUsuario, idSolicitud).Scan(&ok)
 	return ok, err
 }
@@ -852,9 +860,17 @@ func (r *InventarioRepository) ResolverJefe(idSolicitud int, aprobar bool) error
 	return nil
 }
 
-// PuedeAprobarAdmin indica si el usuario pertenece a la oficina de Adquisiciones.
+// PuedeAprobarAdmin indica si el usuario puede resolver la segunda firma de inventario.
 func (r *InventarioRepository) PuedeAprobarAdmin(idUsuario string) (bool, error) {
-	return r.EsAdminInventario(idUsuario)
+	ok, err := tienePermiso(r.db, idUsuario, "inventario.aprobar")
+	if err != nil || ok {
+		return ok, err
+	}
+	ok, err = tienePermiso(r.db, idUsuario, "inventario.mantener")
+	if err != nil || ok {
+		return ok, err
+	}
+	return esAdministradorDeSistema(r.db, idUsuario)
 }
 
 func (r *InventarioRepository) ResolverAdmin(idSolicitud int, aprobar bool) error {

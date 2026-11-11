@@ -1,0 +1,31 @@
+{{define "content"}}
+<h1 class="text-2xl font-bold text-slate-900 mb-2">Auditoría de accesos</h1>
+<p class="text-gray-600 text-sm mb-8">Últimos ingresos, rechazos y cambios de usuarios, perfiles y contraseñas.</p>
+
+<div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200 text-sm">
+        <thead class="bg-slate-50">
+            <tr>
+                <th class="px-4 py-3 text-left font-semibold text-slate-700">Fecha</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-700">Usuario</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-700">Acción</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-700">Detalle</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-700">IP</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {{range .Eventos}}
+            <tr>
+                <td class="px-4 py-3 text-gray-600 whitespace-nowrap">{{.Fecha}}</td>
+                <td class="px-4 py-3 text-gray-800">{{.Usuario}}</td>
+                <td class="px-4 py-3 text-gray-800">{{.Accion}}</td>
+                <td class="px-4 py-3 text-gray-600">{{.Detalle}}</td>
+                <td class="px-4 py-3 text-gray-500">{{.IP}}</td>
+            </tr>
+            {{else}}
+            <tr><td colspan="5" class="px-4 py-8 text-center text-gray-500">Todavía no hay eventos.</td></tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+{{end}}

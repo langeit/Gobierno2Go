@@ -1,15 +1,23 @@
 {{define "content"}}
 <h1 class="text-2xl font-bold text-slate-900 mb-1">Administración de accesos</h1>
-<p class="text-gray-600 text-sm mb-8">Defina perfiles por módulo y asígnelos a cada usuario.</p>
+<p class="text-gray-600 text-sm mb-8">Defina perfiles por proceso y ámbito, y asígnelos a cada usuario.</p>
 
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
     <a href="/admin/perfiles" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
         <h2 class="text-lg font-semibold text-blue-700 mb-1">Perfiles</h2>
-        <p class="text-xs text-gray-500">Crear perfiles y elegir qué módulos puede usar cada uno.</p>
+        <p class="text-xs text-gray-500">Elegir procesos y el departamento o centro sobre el que opera cada perfil.</p>
     </a>
     <a href="/admin/usuarios" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
         <h2 class="text-lg font-semibold text-blue-700 mb-1">Usuarios</h2>
-        <p class="text-xs text-gray-500">Asignar perfiles a los usuarios existentes y crear cuentas nuevas.</p>
+        <p class="text-xs text-gray-500">Asignar perfiles, ligar la ficha y crear cuentas nuevas.</p>
+    </a>
+    <a href="/admin/permisos" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+        <h2 class="text-lg font-semibold text-blue-700 mb-1">Permisos efectivos</h2>
+        <p class="text-xs text-gray-500">Ver el permiso resultante de cada usuario y quién puede ejecutar cada proceso.</p>
+    </a>
+    <a href="/admin/auditoria" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+        <h2 class="text-lg font-semibold text-blue-700 mb-1">Auditoría</h2>
+        <p class="text-xs text-gray-500">Ingresos, rechazos, cambios de perfil, de clave y desactivaciones.</p>
     </a>
 </div>
 {{end}}

@@ -1,5 +1,113 @@
 # Changelog
 
+## [2.0.6] - 2026-11-11
+
+### Añadido
+
+- Mantenedores de Bases/Tablas: listado, alta, modificación y eliminación lógica para las 25 opciones del menú.
+- Grilla hija de sucursales por banco y de equivalencias por moneda.
+- Validación de campos obligatorios, largos, rangos numéricos, fechas, listas de opciones y referencias entre tablas.
+- Avisos de registro creado, actualizado, eliminado, duplicado, referencia inválida o registro en uso.
+
+### Cambiado
+
+- `BasesHandler` ahora recibe el repositorio de tablas y resuelve cada mantenedor desde una definición central de metadatos.
+
+## [2.0.5] - 2026-11-11
+
+### Cambiado
+
+- Las tablas del menú Tablas usan borrado lógico, igual que el resto de los catálogos.
+
+### Base de datos
+
+- Columna `estado` `VARCHAR(1) NOT NULL DEFAULT 'V'` en `tab_region`, `tab_centros_costo`, `tab_areas_negocio`, `tab_atributos`, `tab_ine`, `tab_ciudad`, `tab_comuna`, `tab_provincia`, `tab_tipos_eventos`, `tab_estudios_superiores`, `tab_cargos`, `tab_afp`, `tab_isapre`, `tab_caja_compensacion`, `tab_bancos`, `tab_bancos_sucursales`, `tab_impuesto_unico`, `tab_billetes_monedas`, `tab_ipc`, `tab_monedas`, `tab_monedas_equivalencia`, `tab_relojes`, `tab_festivos`, `tab_tipos_ausentismos`, `tab_tipos_licencias`, `tab_especialidades_medicas` y `tab_diagnosticos`.
+- `V` es vigente y `E` es eliminado.
+
+## [2.0.4] - 2026-11-11
+
+### Añadido
+
+- Menú Bases en el panel general, visible para quien tiene el módulo de Administración. Dentro está el submenú Tablas, con un acceso por cada mantenedor.
+- Cada acceso abre su dirección (`/bases/tablas/...`). La pantalla del mantenedor todavía no existe.
+
+## [2.0.3] - 2026-11-11
+
+### Añadido
+
+- Tablas de cada opción del menú Tablas, con los campos de cada mantenedor. Incluye tipos de licencia, especialidades médicas y diagnósticos.
+
+### Base de datos
+
+- Script `006_tablas.sql`. Se aplica al iniciar, desde el esquema de acceso. PostgreSQL guarda estos nombres en minúsculas.
+- `tab_centros_costo`: código, descripción de 60 y nivel. El manual deja el largo del código en Bases/Parámetros. El código queda en 8.
+- `tab_areas_negocio`: código de 3 y descripción de 60.
+- `tab_atributos`: código, descripción, formato (Numérico, Fecha o Texto), largo del texto o dígitos entero y decimal. El informe de ejemplo usa códigos de 4 dígitos. La descripción queda en 60.
+- `tab_ine`: código numérico de 4 y descripción de 30.
+- `tab_region`: código numérico de 4 y descripción de 40.
+- `tab_ciudad`: código de 3, descripción de 20 y región.
+- `tab_comuna`: código de 4, descripción de 20 y región.
+- `tab_provincia`: código de 5, descripción de 50 y región.
+- `tab_tipos_eventos`: código de 3 y descripción de 40.
+- `tab_estudios_superiores`: código de 3 y descripción de 40.
+- `tab_cargos`: código de 3 y descripción de 60.
+- `tab_afp`: código, nombre, RUT, dirección, comuna, ciudad, teléfono, fax, porcentaje del fondo de pensiones, porcentaje adicional del seguro y el contacto (apellidos, nombres, RUT y teléfono). El manual no indica esos largos. Se usan los de la ISAPRE.
+- `tab_isapre`: código de 3, nombre de 40, RUT de 20, dirección de 40, comuna, ciudad, teléfono y fax de 20, y contacto de 20 en cada campo.
+- `tab_caja_compensacion`: código de 3 y descripción de 60.
+- `tab_bancos`: código de 2, RUT de 20, nombre de 40, identificación de la Superintendencia de 10 y casilla de 10.
+- `tab_bancos_sucursales`: sucursales de cada banco, con código y descripción. El manual no indica esos largos. El código queda en 10 y la descripción en 60.
+- `tab_impuesto_unico`: tramo de un año y mes, con tope mínimo, tope máximo, porcentaje y cantidad a rebajar.
+- `tab_billetes_monedas`: valor de cada denominación.
+- `tab_ipc`: año, factor de apertura y factor de cada mes.
+- `tab_monedas`: código de 2, descripción de 60, símbolo, decimales de informe (hasta 2), decimales de venta (hasta 5) y moneda del Banco Central. El símbolo y el código del Banco Central quedan en 10.
+- `tab_monedas_equivalencia`: valor diario de cada moneda.
+- `tab_relojes`: código, ubicación, puerta de comunicación y dígitos del año (2 o 4). El manual no indica largos. El código queda en 4, la ubicación en 60 y la puerta en 10.
+- `tab_festivos`: fecha y motivo de 60. Es distinta de `for_feriado`.
+- `tab_tipos_ausentismos`: código de 4 y descripción de 60.
+- `tab_tipos_licencias`: código, descripción, descuenta días, días a descontar (0 a 100), bajo n días y meses de base imponible (0 a 23). El manual no indica el largo del código ni de la descripción. El código queda en 4 y la descripción en 60.
+- `tab_especialidades_medicas`: código de 15 y descripción de 60.
+- `tab_diagnosticos`: código de 15 y descripción de 60.
+- Ciudad, comuna y provincia referencian `tab_region`. AFP e ISAPRE referencian comuna y ciudad. Las sucursales referencian el banco y las equivalencias referencian la moneda.
+- Estas tablas no cargan datos de ejemplo y no tienen la columna `estado` de los otros catálogos.
+
+## [2.0.2] - 2026-11-11
+
+### Añadido
+
+- Permiso por proceso dentro del perfil: consultar, ingresar, aprobar y mantener, en cada módulo. El acceso de Formularios y de Inventario sale de esos procesos.
+- Ámbito del perfil por departamento y por centro de responsabilidad. Al vincular un empleado se valida que quede dentro de ese ámbito. Los perfiles con mantener en Formularios o en Administración no tienen ese límite.
+- Una ficha del directorio solo puede tener una cuenta. Si el perfil incluye Formularios, la cuenta exige empleado.
+- Informe de permisos efectivos, por usuario y por proceso.
+- Cambio de contraseña del propio usuario, cambio obligatorio en el primer ingreso, bloqueo de 15 minutos tras 5 intentos fallidos y vencimiento a los 90 días.
+- Auditoría de ingresos, ingresos rechazados, altas y cambios de usuario, cambios de perfil, cambios de clave y desactivaciones. Al desactivar una cuenta se cierran sus sesiones abiertas.
+- Perfiles iniciales Funcionario, Jefatura, Oficina de Personal, Operador de inventario y Encargado de inventario.
+
+### Cambiado
+
+- Dejan de autorizar el departamento 17, el departamento 18 y la columna `tipo = 0`. Quien estaba en esa situación recibe, una sola vez, el perfil Oficina de Personal o Encargado de inventario.
+- La contraseña de un usuario nuevo o reasignada por administración queda oculta y obliga al cambio en el próximo ingreso.
+
+### Base de datos
+
+- Tabla `seg_permiso`: catálogo de procesos por módulo.
+- Tabla `seg_perfil_permiso`: procesos vigentes de cada perfil.
+- Tabla `seg_perfil_ambito`: departamentos y centros de responsabilidad del perfil.
+- Tabla `seg_auditoria`: hechos de acceso y de administración de usuarios y perfiles.
+- Tabla `seg_migracion`: marca la asignación única de los permisos que antes salían del departamento o de `tipo`.
+- Columnas nuevas en `gen_usuario`: `debe_cambiar_password`, `password_expira`, `intentos_fallidos`, `bloqueado_hasta` y `password_cambiada_en`.
+- Índice único `gen_usuario_empleado_key` sobre `gen_usuario.id_empleado`, para una ficha por cuenta.
+- Columnas `estado` en `seg_perfil`, `seg_perfil_modulo` y `seg_usuario_perfil` cuando todavía no existían.
+
+## [2.0.1] - 2026-11-11
+
+### Cambiado
+
+- Reestructuración y organización de los menús y barras laterales del módulo de Formularios y RRHH bajo categorías funcionales claras estilo ERP (Operaciones y Solicitudes, Gestión y Aprobaciones, Mantenedores y Bases).
+- Incorporación de diferenciación visual por roles y permisos (tarjetas y etiquetas de rol: Funcionario, Jefatura/Aprobadores, Oficina de Personal / Admin) en el menú principal del módulo de Formularios y RRHH.
+- Incorporación de jerarquía visual en barras laterales (indentación y bordes de acento) y migas de pan (breadcrumbs) estandarizadas en las cabeceras de todos los layouts de la aplicación.
+- Incorporación de barra de accesos rápidos / atajos frecuentes en el menú principal del módulo para agilizar operaciones comunes en 1 clic.
+- Incorporación de política de seguridad de contraseñas (validación de longitud mínima de 6 caracteres en la creación y actualización de usuarios).
+
 ## [2.0.0] - 2026-11-10
 
 Primera versión publicada. Es el port en Go de la intranet en PHP y la base de las versiones siguientes.

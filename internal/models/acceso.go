@@ -15,14 +15,80 @@ type Perfil struct {
 	Descripcion string
 	Protegido   bool
 	Modulos     []string
+	Permisos    []string
+	Deptos      []int
+	Etapas      []int
 	Nombres     string
 	Usuarios    int
+}
+
+// Permiso es una acción dentro de un módulo.
+type Permiso struct {
+	Codigo string
+	Modulo string
+	Accion string
+	Nombre string
+	Orden  int
+}
+
+// OpcionAmbito es un departamento o un centro de responsabilidad seleccionable.
+type OpcionAmbito struct {
+	ID     int
+	Nombre string
+}
+
+// PermisoEfectivo resume lo que puede hacer un usuario.
+type PermisoEfectivo struct {
+	Usuario  string
+	Nombre   string
+	Permisos string
+}
+
+// PermisoCobertura lista quién puede ejecutar un proceso.
+type PermisoCobertura struct {
+	Codigo   string
+	Modulo   string
+	Nombre   string
+	Usuarios string
+}
+
+// EventoAuditoria es un hecho registrado en la administración de accesos.
+type EventoAuditoria struct {
+	Fecha   string
+	Usuario string
+	Accion  string
+	Detalle string
+	IP      string
 }
 
 // Tiene indica si el perfil incluye el módulo indicado.
 func (p Perfil) Tiene(codigo string) bool {
 	for _, c := range p.Modulos {
 		if c == codigo {
+			return true
+		}
+	}
+	return false
+}
+
+// TienePermiso indica si el perfil incluye el proceso indicado.
+func (p Perfil) TienePermiso(codigo string) bool {
+	for _, c := range p.Permisos {
+		if c == codigo {
+			return true
+		}
+	}
+	return false
+}
+
+// TieneAmbito indica si el perfil limita ese departamento o centro.
+func (p Perfil) TieneAmbito(tipo string, id int) bool {
+	lista := p.Deptos
+	if tipo == "etapa" {
+		lista = p.Etapas
+	}
+	for _, n := range lista {
+		if n == id {
 			return true
 		}
 	}

@@ -1,6 +1,36 @@
 {{define "content"}}
-<h1 class="text-2xl font-bold text-slate-900 mb-1">Formularios de la Subsecretaría</h1>
-<p class="text-gray-600 text-sm mb-8">Solicitudes de feriado legal, días administrativos y acumulación de feriados.</p>
+<div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+    <div>
+        <h1 class="text-2xl font-bold text-slate-900 mb-1">Formularios y Recursos Humanos</h1>
+        <p class="text-gray-600 text-sm">Gestión de feriados legales, permisos administrativos, aprobaciones y mantenedores de personal.</p>
+    </div>
+    <div class="mt-4 md:mt-0 flex items-center space-x-2">
+        {{if .EsAdmin}}
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800">Rol: Administrador RRHH</span>
+        {{else if .EsPersonal}}
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">Rol: Oficina de Personal</span>
+        {{else}}
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800">Rol: Funcionario / Jefatura</span>
+        {{end}}
+    </div>
+</div>
+
+<!-- Accesos Rápidos / Atajos Frecuentes -->
+<div class="bg-gradient-to-r from-blue-900 to-slate-900 text-white rounded-xl p-5 shadow-md mb-8 flex flex-col md:flex-row items-center justify-between">
+    <div class="mb-4 md:mb-0">
+        <span class="text-xs uppercase tracking-wider text-blue-400 font-semibold">Atajos Rápidos</span>
+        <h3 class="text-lg font-bold">Operaciones Frecuentes</h3>
+        <p class="text-xs text-slate-300">Acceda en 1 clic a sus solicitudes y tareas más habituales.</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+        <a href="/formularios/feriado" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition shadow">📅 Solicitar Feriado</a>
+        <a href="/formularios/administrativo" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition shadow">⏱️ Día Administrativo</a>
+        <a href="/formularios/listado" class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition shadow">📋 Mis Solicitudes</a>
+        {{if gt .PendientesAprobacion 0}}
+        <a href="/formularios/aprobaciones" class="bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition shadow">⚠️ Pendientes ({{.PendientesAprobacion}})</a>
+        {{end}}
+    </div>
+</div>
 
 {{if .Empleado}}
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -27,32 +57,74 @@
 </div>
 {{end}}
 
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-    <a href="/formularios/feriado" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
-        <h2 class="text-lg font-semibold text-blue-700 mb-1">Solicitud de Feriado Legal</h2>
-        <p class="text-xs text-gray-500">Registrar una solicitud de vacaciones para el usuario actual.</p>
-    </a>
-    <a href="/formularios/administrativo" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
-        <h2 class="text-lg font-semibold text-blue-700 mb-1">Día Administrativo</h2>
-        <p class="text-xs text-gray-500">Solicitar un permiso administrativo o facultativo.</p>
-    </a>
-    <a href="/formularios/acumulacion" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
-        <h2 class="text-lg font-semibold text-blue-700 mb-1">Acumulación de Feriado</h2>
-        <p class="text-xs text-gray-500">Solicitar acumular días de una solicitud ya aprobada.</p>
-    </a>
-    <a href="/formularios/listado" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
-        <h2 class="text-lg font-semibold text-blue-700 mb-1">Listado de Solicitudes</h2>
-        <p class="text-xs text-gray-500">Consultar feriados y permisos registrados.</p>
-    </a>
-    <a href="/formularios/aprobaciones" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
-        <h2 class="text-lg font-semibold text-blue-700 mb-1">Aprobaciones</h2>
-        <p class="text-xs text-gray-500">Aprobar o rechazar solicitudes pendientes de su departamento.</p>
-    </a>
-    {{if or .PuedeAdmin (and .User (.User.Puede "administracion"))}}
-    <a href="/formularios/admin" class="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition">
-        <h2 class="text-lg font-semibold text-blue-700 mb-1">Administración</h2>
-        <p class="text-xs text-gray-500">Asignar días anuales, facultativos y configurar jefes.</p>
-    </a>
-    {{end}}
+<!-- Categoría 1: Operaciones y Solicitudes (Para Todos los Funcionarios) -->
+<div class="mb-8">
+    <div class="flex items-center justify-between mb-4 border-b pb-2">
+        <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-400">1. Operaciones y Solicitudes</h2>
+        <span class="text-[10px] bg-blue-50 text-blue-700 font-medium px-2 py-0.5 rounded">Uso General / Funcionario</span>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <a href="/formularios/feriado" class="block bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+            <h3 class="text-base font-semibold text-blue-700 mb-1">Feriado Legal</h3>
+            <p class="text-xs text-gray-500">Registrar solicitud de vacaciones.</p>
+        </a>
+        <a href="/formularios/administrativo" class="block bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+            <h3 class="text-base font-semibold text-blue-700 mb-1">Día Administrativo</h3>
+            <p class="text-xs text-gray-500">Solicitar permiso facultativo.</p>
+        </a>
+        <a href="/formularios/acumulacion" class="block bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+            <h3 class="text-base font-semibold text-blue-700 mb-1">Acumulación</h3>
+            <p class="text-xs text-gray-500">Solicitar acumular días aprobados.</p>
+        </a>
+        <a href="/formularios/listado" class="block bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+            <h3 class="text-base font-semibold text-blue-700 mb-1">Mis Solicitudes</h3>
+            <p class="text-xs text-gray-500">Consultar historial y estado.</p>
+        </a>
+    </div>
 </div>
+
+<!-- Categoría 2: Gestión y Aprobaciones (Para Jefaturas y Aprobadores) -->
+{{if .PuedeAprobar}}
+<div class="mb-8">
+    <div class="flex items-center justify-between mb-4 border-b pb-2">
+        <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-400">2. Gestión y Aprobaciones</h2>
+        <span class="text-[10px] bg-emerald-50 text-emerald-700 font-medium px-2 py-0.5 rounded">Jefaturas / Aprobadores</span>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <a href="/formularios/aprobaciones" class="block bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md hover:border-emerald-300 transition">
+            <div class="flex justify-between items-start mb-1">
+                <h3 class="text-base font-semibold text-emerald-700">Aprobaciones</h3>
+                {{if gt .PendientesAprobacion 0}}
+                <span class="bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{{.PendientesAprobacion}}</span>
+                {{end}}
+            </div>
+            <p class="text-xs text-gray-500">Aprobar o rechazar solicitudes pendientes de su departamento.</p>
+        </a>
+    </div>
+</div>
+{{end}}
+
+<!-- Categoría 3: Mantenedores y Bases (Para RRHH y Administradores) -->
+{{if or .PuedeAdmin (and .User (.User.Puede "administracion"))}}
+<div class="mb-8">
+    <div class="flex items-center justify-between mb-4 border-b pb-2">
+        <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-400">3. Mantenedores y Bases (RRHH)</h2>
+        <span class="text-[10px] bg-purple-50 text-purple-700 font-medium px-2 py-0.5 rounded">Oficina de Personal / Admin</span>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <a href="/formularios/admin" class="block bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md hover:border-purple-300 transition">
+            <h3 class="text-base font-semibold text-purple-700 mb-1">Administración de Días y Jefes</h3>
+            <p class="text-xs text-gray-500">Asignar días anuales, facultativos y configurar jefaturas.</p>
+        </a>
+        <a href="/formularios/admin/trabajadores" class="block bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md hover:border-purple-300 transition">
+            <h3 class="text-base font-semibold text-purple-700 mb-1">Mantenedor de Trabajadores</h3>
+            <p class="text-xs text-gray-500">Gestionar directorio y fichas del personal.</p>
+        </a>
+        <a href="/formularios/admin/departamentos" class="block bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md hover:border-purple-300 transition">
+            <h3 class="text-base font-semibold text-purple-700 mb-1">Mantenedor de Departamentos</h3>
+            <p class="text-xs text-gray-500">Gestionar unidades y centros organizacionales.</p>
+        </a>
+    </div>
+</div>
+{{end}}
 {{end}}

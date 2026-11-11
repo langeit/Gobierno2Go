@@ -25,8 +25,12 @@ func (h *PageHandler) LoginPage(w http.ResponseWriter, r *http.Request) {
 
 func (h *PageHandler) DashboardPage(w http.ResponseWriter, r *http.Request) {
 	data := pageData(r)
-	if r.URL.Query().Get("ok") == "sinpermiso" {
+	data["Opciones"] = OpcionesTablas()
+	switch r.URL.Query().Get("ok") {
+	case "sinpermiso":
 		data["Error"] = "No tiene acceso a ese módulo."
+	case "clave":
+		data["Success"] = "Contraseña actualizada. La próxima vence en 90 días."
 	}
 	renderPage(w, h.templatesDir, "dashboard.html", "dashboard.html", "", data)
 }

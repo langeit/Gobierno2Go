@@ -1,0 +1,67 @@
+{{define "content"}}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-slate-900 mb-1">{{if .Editar}}Modificar{{else}}Nuevo{{end}} {{.Def.Nombre}}</h1>
+    <p class="text-gray-600 text-sm">
+        {{if .EsHija}}Registro de {{.Def.Nombre}} para {{.PadreEtiqueta}}.{{else}}{{.Def.Descripcion}}{{end}}
+    </p>
+</div>
+
+<form method="post" action="{{.Accion}}" class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm max-w-3xl">
+    {{range .Def.Campos}}
+    {{if and .Clave (or $.Editar (eq .Nombre $.Def.CampoPadre))}}
+    <input type="hidden" name="k_{{.Nombre}}" value="{{index $.Valores .Nombre}}">
+    {{end}}
+    {{end}}
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {{range .Def.Campos}}
+        {{if not (and .Clave (or $.Editar (eq .Nombre $.Def.CampoPadre)))}}
+        <div class="{{if or (eq .Tipo "referencia") (eq .Tipo "opcion")}}md:col-span-1{{end}}">
+            <label class="block text-xs font-medium text-gray-700 mb-1" for="f_{{.Nombre}}">
+                {{.Etiqueta}}{{if .Requerido}} *{{end}}
+                {{if .Clave}}<span class="text-gray-400">(clave)</span>{{end}}
+            </label>
+
+            {{if eq .Tipo "opcion"}}
+            <select id="f_{{.Nombre}}" name="f_{{.Nombre}}" {{if .Requerido}}required{{end}} class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                {{if not .Requerido}}<option value="">—</option>{{else}}<option value="">Seleccione…</option>{{end}}
+                {{$actual := index $.Valores .Nombre}}
+                {{range .Opciones}}
+                <option value="{{.Valor}}" {{if eq .Valor $actual}}selected{{end}}>{{.Etiqueta}}</option>
+                {{end}}
+            </select>
+            {{else if eq .Tipo "referencia"}}
+            <select id="f_{{.Nombre}}" name="f_{{.Nombre}}" {{if .Requerido}}required{{end}} class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <option value="">Seleccione…</option>
+                {{$actual := index $.Valores .Nombre}}
+                {{range index $.OpcionesRef .Nombre}}
+                <option value="{{.Valor}}" {{if eq .Valor $actual}}selected{{end}}>{{.Etiqueta}}</option>
+                {{end}}
+            </select>
+            {{else if eq .Tipo "booleano"}}
+            <div class="flex items-center h-10">
+                <input id="f_{{.Nombre}}" name="f_{{.Nombre}}" type="checkbox" value="true" {{if eq (index $.Valores .Nombre) "true"}}checked{{end}} class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                <span class="ml-2 text-sm text-gray-600">Sí</span>
+            </div>
+            {{else if eq .Tipo "fecha"}}
+            <input id="f_{{.Nombre}}" name="f_{{.Nombre}}" type="date" value="{{index $.Valores .Nombre}}" {{if .Requerido}}required{{end}} class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            {{else if eq .Tipo "entero"}}
+            <input id="f_{{.Nombre}}" name="f_{{.Nombre}}" type="number" step="1" value="{{index $.Valores .Nombre}}" {{if .Requerido}}required{{end}} {{if .Min}}min="{{.Min}}"{{end}} {{if .Max}}max="{{.Max}}"{{end}} class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            {{else if eq .Tipo "decimal"}}
+            <input id="f_{{.Nombre}}" name="f_{{.Nombre}}" type="number" step="any" value="{{index $.Valores .Nombre}}" {{if .Requerido}}required{{end}} class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            {{else}}
+            <input id="f_{{.Nombre}}" name="f_{{.Nombre}}" type="text" value="{{index $.Valores .Nombre}}" {{if .Requerido}}required{{end}} {{if .Largo}}maxlength="{{.Largo}}"{{end}} class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            {{end}}
+
+            {{if .Ayuda}}<p class="mt-1 text-xs text-gray-500">{{.Ayuda}}</p>{{end}}
+        </div>
+        {{end}}
+        {{end}}
+    </div>
+
+    <div class="flex items-center space-x-3 mt-8">
+        <button type="submit" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-sm transition">{{if .Editar}}Modificar{{else}}Guardar{{end}}</button>
+        <a href="{{.VolverURL}}" class="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-slate-700 text-sm font-semibold rounded-lg transition">Volver al listado</a>
+    </div>
+</form>
+{{end}}

@@ -1,12 +1,13 @@
 package models
 
 type User struct {
-	IDUsuario string `json:"id_usuario"`
-	Login     string `json:"login"`
-	Password  string `json:"-"`
-	Estado    string `json:"estado"`
-	Nombre    string `json:"nombre,omitempty"`
-	Tipo      string `json:"tipo,omitempty"`
+	IDUsuario   string `json:"id_usuario"`
+	Login       string `json:"login"`
+	Password    string `json:"-"`
+	Estado      string `json:"estado"`
+	Nombre      string `json:"nombre,omitempty"`
+	Tipo        string `json:"tipo,omitempty"`
+	DebeCambiar bool   `json:"-"`
 }
 
 type LoginRequest struct {

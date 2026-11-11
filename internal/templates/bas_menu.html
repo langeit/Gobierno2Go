@@ -1,0 +1,15 @@
+{{define "content"}}
+<h1 class="text-2xl font-bold text-slate-900 mb-1">Bases</h1>
+<p class="text-gray-600 text-sm mb-8">Tablas de datos compartidas por el sistema.</p>
+
+<div class="mb-2">
+    <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-400 border-b pb-2 mb-4">Tablas</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {{range .Opciones}}
+        <a href="/bases/tablas/{{.Codigo}}" class="block bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md hover:border-blue-300 transition">
+            <h3 class="text-base font-semibold text-blue-700">{{.Nombre}}</h3>
+        </a>
+        {{end}}
+    </div>
+</div>
+{{end}}

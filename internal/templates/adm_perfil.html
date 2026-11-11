@@ -15,23 +15,7 @@
             <input type="text" name="descripcion" maxlength="200" value="{{.Perfil.Descripcion}}" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
         </div>
     </div>
-    <p class="text-xs font-medium text-gray-600 mb-2">Módulos</p>
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-5">
-        {{range .Modulos}}
-        <label class="flex items-start space-x-2 text-sm text-gray-700">
-            {{if and $.Perfil.Protegido (eq .Codigo "administracion")}}
-            <input type="checkbox" checked disabled class="mt-1">
-            <input type="hidden" name="modulos" value="administracion">
-            {{else}}
-            <input type="checkbox" name="modulos" value="{{.Codigo}}" class="mt-1" {{if $.Perfil.Tiene .Codigo}}checked{{end}}>
-            {{end}}
-            <span>
-                <span class="font-medium">{{.Nombre}}</span>
-                <span class="block text-xs text-gray-500">{{.Descripcion}}</span>
-            </span>
-        </label>
-        {{end}}
-    </div>
+    {{template "permisos_ambito" .}}
     {{if .Perfil.Protegido}}
     <p class="text-xs text-gray-500 mb-4">Este perfil está protegido: conserva el módulo de administración y no se puede eliminar.</p>
     {{end}}

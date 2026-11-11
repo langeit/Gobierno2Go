@@ -16,13 +16,15 @@ const sessionTTL = 8 * time.Hour
 
 // Info contiene los datos del usuario autenticado que viajan en la sesión.
 type Info struct {
-	UserID      string
-	Login       string
-	Nombre      string
-	Tipo        string
-	Etapa       int
-	EtapaNombre string
-	Modulos     map[string]bool
+	UserID           string
+	Login            string
+	Nombre           string
+	Tipo             string
+	Etapa            int
+	EtapaNombre      string
+	Modulos          map[string]bool
+	Permisos         map[string]bool
+	DebeCambiarClave bool
 }
 
 type sessionData struct {
@@ -81,6 +83,29 @@ func (m *Manager) Delete(token string) {
 	m.mu.Lock()
 	delete(m.sessions, token)
 	m.mu.Unlock()
+}
+
+// DeleteByUser cierra todas las sesiones abiertas de una cuenta.
+func (m *Manager) DeleteByUser(userID string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for token, data := range m.sessions {
+		if data.Info.UserID == userID {
+			delete(m.sessions, token)
+		}
+	}
+}
+
+// Update reemplaza los datos de una sesión vigente.
+func (m *Manager) Update(token string, info Info) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	data, ok := m.sessions[token]
+	if !ok || time.Now().After(data.Expires) {
+		return
+	}
+	data.Info = info
+	m.sessions[token] = data
 }
 
 type ctxKey struct{}

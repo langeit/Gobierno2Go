@@ -35,6 +35,9 @@ func TestMigrarContrasenas(t *testing.T) {
 
 	repo := NewUserRepository(db)
 	acceso := NewAccesoRepository(db)
+	if err := acceso.EnsureSchema(); err != nil {
+		t.Fatal(err)
+	}
 	const login = "bcrypttmp"
 	const clave = "clave-temporal-1"
 	t.Cleanup(func() {
@@ -80,7 +83,7 @@ func TestMigrarContrasenas(t *testing.T) {
 	t.Cleanup(func() {
 		db.Exec(`DELETE FROM gen_usuario WHERE id_usuario = $1`, otro)
 	})
-	if err := acceso.CrearUsuario(otro, "otra-clave", "Nuevo bcrypt", nil); err != nil {
+	if err := acceso.CrearUsuario(otro, "otra-clave", "Nuevo bcrypt", 0, nil); err != nil {
 		t.Fatal(err)
 	}
 	var guardada string

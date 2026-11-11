@@ -17,36 +17,42 @@
             <p class="text-sm font-semibold truncate">{{if .User}}{{.User.Nombre}}{{end}}</p>
             <p class="text-xs text-slate-400 truncate">{{if .User}}{{.User.Login}}{{end}}</p>
         </div>
-        <nav class="flex-1 overflow-y-auto py-3 space-y-0.5 text-sm">
-            <a href="/formularios" class="block px-4 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white transition">Menú principal</a>
-            <a href="/formularios/feriado" class="block px-4 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white transition">Solicitud Feriado Legal</a>
-            <a href="/formularios/administrativo" class="block px-4 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white transition">Día Administrativo</a>
-            <a href="/formularios/acumulacion" class="block px-4 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white transition">Acumulación de Feriado</a>
-            <a href="/formularios/listado" class="block px-4 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white transition">Listado de Solicitudes</a>
-            <a href="/formularios/aprobaciones" class="block px-4 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white transition">Aprobaciones</a>
+        <nav class="flex-1 overflow-y-auto py-3 space-y-0.5 text-xs">
+            <a href="/formularios" class="block px-4 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition font-medium">Menú principal</a>
+            
+            <div class="px-4 pt-3 pb-1 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">1. Operaciones</div>
+            <a href="/formularios/feriado" class="block pl-6 pr-4 py-1.5 text-slate-300 hover:bg-slate-800 hover:text-white transition border-l-2 border-transparent hover:border-blue-400">Solicitud Feriado Legal</a>
+            <a href="/formularios/administrativo" class="block pl-6 pr-4 py-1.5 text-slate-300 hover:bg-slate-800 hover:text-white transition border-l-2 border-transparent hover:border-blue-400">Día Administrativo</a>
+            <a href="/formularios/acumulacion" class="block pl-6 pr-4 py-1.5 text-slate-300 hover:bg-slate-800 hover:text-white transition border-l-2 border-transparent hover:border-blue-400">Acumulación de Feriado</a>
+            <a href="/formularios/listado" class="block pl-6 pr-4 py-1.5 text-slate-300 hover:bg-slate-800 hover:text-white transition border-l-2 border-transparent hover:border-blue-400">Listado de Solicitudes</a>
+
+            <div class="px-4 pt-3 pb-1 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">2. Gestión</div>
+            <a href="/formularios/aprobaciones" class="block pl-6 pr-4 py-1.5 text-slate-300 hover:bg-slate-800 hover:text-white transition border-l-2 border-transparent hover:border-emerald-400">Aprobaciones</a>
+
             {{if or .PuedeAdmin (and .User (.User.Puede "administracion"))}}
-            <div class="border-t border-slate-800 my-2"></div>
-            <a href="/formularios/personal/feriado" class="block px-4 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white transition">Registro Feriado (Personal)</a>
-            <a href="/formularios/personal/administrativo" class="block px-4 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white transition">Registro Facultativo (Personal)</a>
-            <a href="/formularios/admin" class="block px-4 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white transition">Administración</a>
-            <a href="/formularios/admin/trabajadores" class="block px-4 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white transition">Mantenedor de Trabajadores</a>
-            <a href="/formularios/admin/departamentos" class="block px-4 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white transition">Mantenedor de Departamentos</a>
+            <div class="px-4 pt-3 pb-1 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">3. Mantenedores</div>
+            <a href="/formularios/personal/feriado" class="block pl-6 pr-4 py-1.5 text-slate-300 hover:bg-slate-800 hover:text-white transition border-l-2 border-transparent hover:border-purple-400">Registro Feriado (Personal)</a>
+            <a href="/formularios/personal/administrativo" class="block pl-6 pr-4 py-1.5 text-slate-300 hover:bg-slate-800 hover:text-white transition border-l-2 border-transparent hover:border-purple-400">Registro Facultativo (Personal)</a>
+            <a href="/formularios/admin" class="block pl-6 pr-4 py-1.5 text-slate-300 hover:bg-slate-800 hover:text-white transition border-l-2 border-transparent hover:border-purple-400">Administración</a>
+            <a href="/formularios/admin/trabajadores" class="block pl-6 pr-4 py-1.5 text-slate-300 hover:bg-slate-800 hover:text-white transition border-l-2 border-transparent hover:border-purple-400">Mantenedor de Trabajadores</a>
+            <a href="/formularios/admin/departamentos" class="block pl-6 pr-4 py-1.5 text-slate-300 hover:bg-slate-800 hover:text-white transition border-l-2 border-transparent hover:border-purple-400">Mantenedor de Departamentos</a>
             {{end}}
-            <div class="border-t border-slate-800 my-2"></div>
-            <a href="/dashboard" class="block px-4 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white transition">← Panel general</a>
-            <a href="/logout" class="block px-4 py-2.5 text-red-300 hover:bg-red-600 hover:text-white transition">Cerrar sesión</a>
+            
+            <div class="border-t border-slate-800 my-3"></div>
+            <a href="/dashboard" class="block px-4 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition">← Panel general</a>
+            <a href="/logout" class="block px-4 py-2 text-red-300 hover:bg-red-600 hover:text-white transition">Cerrar sesión</a>
         </nav>
     </aside>
 
     <div class="flex-1 md:ml-64 flex flex-col">
         <header class="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center shadow-sm">
-            <div class="flex items-center space-x-3">
-                <a href="/dashboard" class="text-slate-500 font-semibold text-sm hover:text-blue-600 hover:underline">Panel general</a>
-                <span class="text-gray-300">|</span>
-                <a href="/formularios" class="text-blue-600 font-semibold text-sm hover:underline">Formularios y RRHH</a>
-                <span class="text-gray-300">|</span>
-                <span class="text-sm text-gray-600">{{.Title}}</span>
-            </div>
+            <nav class="flex items-center space-x-2 text-xs" aria-label="Breadcrumb">
+                <a href="/dashboard" class="text-slate-500 hover:text-blue-600 hover:underline">Panel general</a>
+                <span class="text-gray-300">›</span>
+                <a href="/formularios" class="text-blue-600 font-medium hover:underline">Formularios y RRHH</a>
+                <span class="text-gray-300">›</span>
+                <span class="text-slate-800 font-semibold">{{.Title}}</span>
+            </nav>
             <div class="text-xs text-gray-500">{{if .User}}{{.User.Nombre}}{{end}}</div>
         </header>
 

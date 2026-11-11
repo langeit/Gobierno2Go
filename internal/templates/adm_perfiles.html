@@ -47,18 +47,7 @@
             <input type="text" name="descripcion" maxlength="200" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
         </div>
     </div>
-    <p class="text-xs font-medium text-gray-600 mb-2">Módulos</p>
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-5">
-        {{range .Modulos}}
-        <label class="flex items-start space-x-2 text-sm text-gray-700">
-            <input type="checkbox" name="modulos" value="{{.Codigo}}" class="mt-1">
-            <span>
-                <span class="font-medium">{{.Nombre}}</span>
-                <span class="block text-xs text-gray-500">{{.Descripcion}}</span>
-            </span>
-        </label>
-        {{end}}
-    </div>
+    {{template "permisos_ambito" .}}
     <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700">Crear perfil</button>
 </form>
 {{end}}

@@ -45,6 +45,7 @@ func (h *FormularioHandler) MenuPage(w http.ResponseWriter, r *http.Request) {
 		data["EsAdmin"] = esAdmin
 	}
 	data["PuedeAdmin"] = esPersonal || esAdmin
+	data["PuedeAprobar"] = user.PuedeProceso("formularios.aprobar") || user.PuedeProceso("formularios.mantener")
 
 	if idEmpleado > 0 {
 		if emp, err := h.repo.EmpleadoPorID(idEmpleado, anho); err == nil {

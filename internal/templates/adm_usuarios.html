@@ -14,9 +14,19 @@
         </div>
         <div>
             <label class="block text-xs font-medium text-gray-600 mb-1">Contraseña</label>
-            <input type="text" name="password" required maxlength="100" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+            <input type="password" name="password" required minlength="6" maxlength="72" autocomplete="new-password" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Empleado</label>
+            <select name="id_empleado" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+                <option value="0">Sin empleado</option>
+                {{range .Empleados}}
+                <option value="{{.IDEmpleado}}">{{.Nombre}}</option>
+                {{end}}
+            </select>
         </div>
     </div>
+    <p class="text-xs text-gray-500 mb-4">Si el perfil incluye Formularios, el empleado es obligatorio y no puede repetirse en otra cuenta. La persona deberá cambiar esta clave en el primer ingreso.</p>
     <p class="text-xs font-medium text-gray-600 mb-2">Perfiles iniciales</p>
     <div class="flex flex-wrap gap-3 mb-5">
         {{range .Perfiles}}

@@ -1,0 +1,54 @@
+{{define "content"}}
+<h1 class="text-2xl font-bold text-slate-900 mb-2">Permisos efectivos</h1>
+<p class="text-gray-600 text-sm mb-8">La unión de los perfiles vigentes de cada cuenta, y quién puede ejecutar cada proceso.</p>
+
+<h2 class="text-lg font-semibold text-slate-900 mb-3">Por usuario</h2>
+<div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-x-auto mb-8">
+    <table class="min-w-full divide-y divide-gray-200 text-sm">
+        <thead class="bg-slate-50">
+            <tr>
+                <th class="px-4 py-3 text-left font-semibold text-slate-700">Usuario</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-700">Procesos</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {{range .Efectivos}}
+            <tr>
+                <td class="px-4 py-3 align-top">
+                    <p class="font-medium text-gray-800">{{.Nombre}}</p>
+                    <p class="text-xs text-gray-500">{{.Usuario}}</p>
+                </td>
+                <td class="px-4 py-3 text-gray-600 text-xs">{{if .Permisos}}{{.Permisos}}{{else}}Sin procesos{{end}}</td>
+            </tr>
+            {{else}}
+            <tr><td colspan="2" class="px-4 py-8 text-center text-gray-500">No hay usuarios activos.</td></tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+
+<h2 class="text-lg font-semibold text-slate-900 mb-3">Por proceso</h2>
+<div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200 text-sm">
+        <thead class="bg-slate-50">
+            <tr>
+                <th class="px-4 py-3 text-left font-semibold text-slate-700">Proceso</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-700">Usuarios</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {{range .Cobertura}}
+            <tr>
+                <td class="px-4 py-3 align-top">
+                    <p class="font-medium text-gray-800">{{.Modulo}} · {{.Nombre}}</p>
+                    <p class="text-xs text-gray-500">{{.Codigo}}</p>
+                </td>
+                <td class="px-4 py-3 text-gray-600 text-xs">{{if .Usuarios}}{{.Usuarios}}{{else}}Nadie{{end}}</td>
+            </tr>
+            {{else}}
+            <tr><td colspan="2" class="px-4 py-8 text-center text-gray-500">No hay procesos definidos.</td></tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+{{end}}
