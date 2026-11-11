@@ -8,13 +8,9 @@ Los módulos que ahí se encontraban eran;
 
 Este proyecto está hecho en Go+Chi+Postgres, una mejora del antiguo hecho en PHP5+Postgres
 
-A este se le ha añadido lo siguiente;
-- Administración de usuarios
-- Administración de trabajadores
-
-Estos módulos no se encontraban disponibles en el repositorio original
-
 El Framework CSS es Tailwind CSS
+
+Todas las modificaciones del los módulos individuales y nuevos añadidos se podrán ver en el Changelog de la aplicación
 
 
 Datos del proyecto original
