@@ -96,7 +96,7 @@
             </div>
             {{end}}
 
-            {{if .User.Puede "administracion"}}
+            {{if .User.Puede "bases"}}
             <div class="mt-2">
                 <button onclick="toggleSubmenu('bas-submenu', this)" class="w-full flex justify-between items-center px-4 py-2.5 text-xs font-semibold uppercase text-slate-400 hover:text-white hover:bg-slate-800 transition tracking-wider cursor-pointer">
                     <span>Bases</span>
@@ -115,6 +115,8 @@
                     </div>
                 </div>
             </div>
+            {{end}}
+            {{if .User.Puede "administracion"}}
             <div class="mt-2">
                 <button onclick="toggleSubmenu('adm-submenu', this)" class="w-full flex justify-between items-center px-4 py-2.5 text-xs font-semibold uppercase text-slate-400 hover:text-white hover:bg-slate-800 transition tracking-wider cursor-pointer">
                     <span>Administración</span>
@@ -186,12 +188,14 @@
                     <a href="/formularios" class="inline-block px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white rounded-md text-xs font-semibold transition">Acceder</a>
                 </div>
                 {{end}}
-                {{if .User.Puede "administracion"}}
+                {{if .User.Puede "bases"}}
                 <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition">
                     <h3 class="text-lg font-semibold text-blue-600 mb-2">Bases</h3>
                     <p class="text-xs text-gray-500 mb-4">Tablas compartidas: centros de costo, AFP, regiones, monedas y el resto de los mantenedores.</p>
                     <a href="/bases" class="inline-block px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white rounded-md text-xs font-semibold transition">Acceder</a>
                 </div>
+                {{end}}
+                {{if .User.Puede "administracion"}}
                 <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition">
                     <h3 class="text-lg font-semibold text-blue-600 mb-2">Administración</h3>
                     <p class="text-xs text-gray-500 mb-4">Perfiles de acceso y asignación de módulos a los usuarios.</p>
@@ -199,46 +203,12 @@
                 </div>
                 {{end}}
             </div>
-            {{if not (or (.User.Puede "adquisiciones") (.User.Puede "inventario") (.User.Puede "correspondencia") (.User.Puede "formularios") (.User.Puede "administracion"))}}
+            {{if not (or (.User.Puede "adquisiciones") (.User.Puede "inventario") (.User.Puede "correspondencia") (.User.Puede "formularios") (.User.Puede "bases") (.User.Puede "administracion"))}}
             <p class="mt-6 text-sm text-gray-500">Su usuario no tiene módulos asignados. Pida a un administrador que le asigne un perfil.</p>
             {{end}}
         </main>
     </div>
 
-    <script>
-        const toggleBtn = document.getElementById('menu-toggle');
-        const sidebar = document.getElementById('sidebar');
-        const mainContent = document.getElementById('main-content');
-        const sidebarClose = document.getElementById('sidebar-close');
-
-        let isSidebarOpen = window.innerWidth >= 768;
-        if (!isSidebarOpen) {
-            sidebar.classList.add('-translate-x-full');
-            mainContent.classList.remove('md:ml-64');
-        }
-
-        function toggleSidebar() {
-            isSidebarOpen = !isSidebarOpen;
-            if (isSidebarOpen) {
-                sidebar.classList.remove('-translate-x-full');
-                mainContent.classList.add('md:ml-64');
-            } else {
-                sidebar.classList.add('-translate-x-full');
-                mainContent.classList.remove('md:ml-64');
-            }
-        }
-
-        function toggleSubmenu(id, btn) {
-            const submenu = document.getElementById(id);
-            const arrow = btn.querySelector('span:last-child');
-            submenu.classList.toggle('hidden');
-            arrow.classList.toggle('rotate-180');
-        }
-
-        toggleBtn.addEventListener('click', toggleSidebar);
-        if (sidebarClose) {
-            sidebarClose.addEventListener('click', toggleSidebar);
-        }
-    </script>
+    {{template "sidebar_toggle" .}}
 </body>
 </html>

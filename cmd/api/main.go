@@ -413,9 +413,27 @@ func main() {
 		})
 
 		r.Group(func(r chi.Router) {
+			r.Use(session.RequireModule("bases"))
+			r.Get("/bases", basesHandler.MenuPage)
+			r.Get("/bases/tablas/{codigo}", basesHandler.OpcionPage)
+			r.Get("/bases/tablas/{codigo}/nuevo", basesHandler.NuevoPage)
+			r.Post("/bases/tablas/{codigo}/nuevo", basesHandler.NuevoPost)
+			r.Get("/bases/tablas/{codigo}/editar", basesHandler.EditarPage)
+			r.Post("/bases/tablas/{codigo}/editar", basesHandler.EditarPost)
+			r.Post("/bases/tablas/{codigo}/eliminar", basesHandler.EliminarPost)
+			r.Get("/bases/tablas/{codigo}/hijos", basesHandler.HijosPage)
+			r.Get("/bases/tablas/{codigo}/hijos/nuevo", basesHandler.HijoNuevoPage)
+			r.Post("/bases/tablas/{codigo}/hijos/nuevo", basesHandler.HijoNuevoPost)
+			r.Get("/bases/tablas/{codigo}/hijos/editar", basesHandler.HijoEditarPage)
+			r.Post("/bases/tablas/{codigo}/hijos/editar", basesHandler.HijoEditarPost)
+			r.Post("/bases/tablas/{codigo}/hijos/eliminar", basesHandler.HijoEliminarPost)
+		})
+
+		r.Group(func(r chi.Router) {
 			r.Use(session.RequireModule("administracion"))
 			r.Get("/admin", accesoHandler.MenuPage)
 			r.Get("/admin/perfiles", accesoHandler.PerfilesPage)
+			r.Get("/admin/perfiles/nuevo", accesoHandler.PerfilNuevoPage)
 			r.Post("/admin/perfiles", accesoHandler.PerfilNuevoPost)
 			r.Get("/admin/perfiles/{id}", func(w http.ResponseWriter, r *http.Request) {
 				id, _ := strconv.Atoi(chi.URLParam(r, "id"))
@@ -430,26 +448,19 @@ func main() {
 				accesoHandler.PerfilEliminarPost(w, r, id)
 			})
 			r.Get("/admin/usuarios", accesoHandler.UsuariosPage)
+			r.Get("/admin/usuarios/nuevo", accesoHandler.UsuarioNuevoPage)
 			r.Post("/admin/usuarios", accesoHandler.UsuarioNuevoPost)
+			r.Get("/admin/usuarios/{id}", func(w http.ResponseWriter, r *http.Request) {
+				accesoHandler.UsuarioEditarPage(w, r, chi.URLParam(r, "id"))
+			})
 			r.Post("/admin/usuarios/{id}", func(w http.ResponseWriter, r *http.Request) {
 				accesoHandler.UsuarioPost(w, r, chi.URLParam(r, "id"))
 			})
+			r.Post("/admin/usuarios/{id}/eliminar", func(w http.ResponseWriter, r *http.Request) {
+				accesoHandler.UsuarioEliminarPost(w, r, chi.URLParam(r, "id"))
+			})
 			r.Get("/admin/permisos", accesoHandler.PermisosPage)
 			r.Get("/admin/auditoria", accesoHandler.AuditoriaPage)
-
-			r.Get("/bases", basesHandler.MenuPage)
-			r.Get("/bases/tablas/{codigo}", basesHandler.OpcionPage)
-			r.Get("/bases/tablas/{codigo}/nuevo", basesHandler.NuevoPage)
-			r.Post("/bases/tablas/{codigo}/nuevo", basesHandler.NuevoPost)
-			r.Get("/bases/tablas/{codigo}/editar", basesHandler.EditarPage)
-			r.Post("/bases/tablas/{codigo}/editar", basesHandler.EditarPost)
-			r.Post("/bases/tablas/{codigo}/eliminar", basesHandler.EliminarPost)
-			r.Get("/bases/tablas/{codigo}/hijos", basesHandler.HijosPage)
-			r.Get("/bases/tablas/{codigo}/hijos/nuevo", basesHandler.HijoNuevoPage)
-			r.Post("/bases/tablas/{codigo}/hijos/nuevo", basesHandler.HijoNuevoPost)
-			r.Get("/bases/tablas/{codigo}/hijos/editar", basesHandler.HijoEditarPage)
-			r.Post("/bases/tablas/{codigo}/hijos/editar", basesHandler.HijoEditarPost)
-			r.Post("/bases/tablas/{codigo}/hijos/eliminar", basesHandler.HijoEliminarPost)
 		})
 	})
 

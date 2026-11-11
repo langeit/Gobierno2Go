@@ -1,0 +1,71 @@
+{{define "sidebar_toggle"}}
+<script>
+    (function () {
+        const sidebar = document.getElementById('sidebar');
+        const mainContent = document.getElementById('main-content');
+        const toggleBtn = document.getElementById('menu-toggle');
+        if (!sidebar || !mainContent || !toggleBtn) {
+            return;
+        }
+
+        const clave = 'gobierno2go.sidebar';
+        const anchoEscritorio = 768;
+
+        function aplicar(abierto) {
+            if (abierto) {
+                sidebar.classList.remove('-translate-x-full');
+                mainContent.classList.add('md:ml-64');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                mainContent.classList.remove('md:ml-64');
+            }
+            toggleBtn.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+        }
+
+        function estadoInicial() {
+            try {
+                const guardado = localStorage.getItem(clave);
+                if (guardado === '1') {
+                    return true;
+                }
+                if (guardado === '0') {
+                    return false;
+                }
+            } catch (error) {
+                // Sin almacenamiento local: se usa el ancho de pantalla.
+            }
+            return window.innerWidth >= anchoEscritorio;
+        }
+
+        function alternar() {
+            const abrir = sidebar.classList.contains('-translate-x-full');
+            aplicar(abrir);
+            try {
+                localStorage.setItem(clave, abrir ? '1' : '0');
+            } catch (error) {
+                // El estado solo dura la página actual.
+            }
+        }
+
+        aplicar(estadoInicial());
+        toggleBtn.addEventListener('click', alternar);
+
+        const cerrar = document.getElementById('sidebar-close');
+        if (cerrar) {
+            cerrar.addEventListener('click', alternar);
+        }
+
+        window.toggleSubmenu = function (id, boton) {
+            const submenu = document.getElementById(id);
+            if (!submenu) {
+                return;
+            }
+            submenu.classList.toggle('hidden');
+            const flecha = boton.querySelector('span:last-child');
+            if (flecha) {
+                flecha.classList.toggle('rotate-180');
+            }
+        };
+    })();
+</script>
+{{end}}

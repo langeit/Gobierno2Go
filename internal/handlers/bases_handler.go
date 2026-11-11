@@ -12,6 +12,7 @@ import (
 
 	"Gobierno2Go/internal/models"
 	"Gobierno2Go/internal/repository"
+	"Gobierno2Go/internal/session"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -22,17 +23,39 @@ type OpcionTabla struct {
 	Nombre string
 }
 
-// OpcionesTablas devuelve las opciones del menú Bases, submenú Tablas.
-func OpcionesTablas() []OpcionTabla {
+// OpcionesTablasPara devuelve solo las tablas autorizadas para la sesión.
+func OpcionesTablasPara(info session.Info) []OpcionTabla {
 	var opciones []OpcionTabla
 	for _, t := range models.Tablas() {
-		opciones = append(opciones, OpcionTabla{Codigo: t.Codigo, Nombre: t.Nombre})
+		if info.PuedeProceso(models.PermisoTabla(t.Codigo)) {
+			opciones = append(opciones, OpcionTabla{Codigo: t.Codigo, Nombre: t.Nombre})
+		}
 	}
 	return opciones
 }
 
 type columnaVista struct {
-	Etiqueta string
+	Etiqueta   string
+	OrdenURL   string
+	Activa     bool
+	Ascendente bool
+}
+
+type paginaVista struct {
+	Numero int
+	URL    string
+	Activa bool
+}
+
+type paginacionVista struct {
+	Pagina       int
+	TotalPaginas int
+	Total        int
+	Desde        int
+	Hasta        int
+	AnteriorURL  string
+	SiguienteURL string
+	Paginas      []paginaVista
 }
 
 type claveVista struct {
@@ -61,9 +84,24 @@ func NewBasesHandler(repo *repository.TablaRepository, templatesDir string) *Bas
 func (h *BasesHandler) datos(r *http.Request, title, codigo string) map[string]interface{} {
 	data := pageData(r)
 	data["Title"] = title
-	data["Opciones"] = OpcionesTablas()
+	if info, ok := session.FromContext(r.Context()); ok {
+		data["Opciones"] = OpcionesTablasPara(info)
+	}
 	data["Codigo"] = codigo
 	return data
+}
+
+func (h *BasesHandler) autorizar(w http.ResponseWriter, r *http.Request, codigo string) bool {
+	info, ok := session.FromContext(r.Context())
+	if !ok {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return false
+	}
+	if info.PuedeProceso(models.PermisoTabla(codigo)) {
+		return true
+	}
+	http.Redirect(w, r, "/dashboard?ok=sinpermiso", http.StatusSeeOther)
+	return false
 }
 
 func (h *BasesHandler) MenuPage(w http.ResponseWriter, r *http.Request) {
@@ -81,8 +119,13 @@ func (h *BasesHandler) HijosPage(w http.ResponseWriter, r *http.Request) {
 	h.lista(w, r, true)
 }
 
+const registrosPorPagina = 15
+
 func (h *BasesHandler) lista(w http.ResponseWriter, r *http.Request, esHija bool) {
 	codigo := chi.URLParam(r, "codigo")
+	if !h.autorizar(w, r, codigo) {
+		return
+	}
 	def, padre, ok := definicion(codigo, esHija)
 	if !ok {
 		http.NotFound(w, r)
@@ -104,7 +147,37 @@ func (h *BasesHandler) lista(w http.ResponseWriter, r *http.Request, esHija bool
 		}
 	}
 
-	filas, err := h.repo.Listar(def, filtroColumna, filtroValor)
+	base := "/bases/tablas/" + codigo
+	if esHija {
+		base += "/hijos"
+	}
+
+	busqueda := strings.TrimSpace(r.URL.Query().Get("q"))
+	orden := r.URL.Query().Get("orden")
+	if orden != "" {
+		if _, existe := def.Campo(orden); !existe {
+			orden = ""
+		}
+	}
+	ascendente := r.URL.Query().Get("dir") != "desc"
+	pagina := 1
+	if n, err := strconv.Atoi(r.URL.Query().Get("pagina")); err == nil && n > 0 {
+		pagina = n
+	}
+	ordenEfectivo := orden
+	if ordenEfectivo == "" && len(def.Orden) == 1 {
+		ordenEfectivo = def.Orden[0]
+	}
+
+	filas, total, pagina, err := h.repo.Listar(def, repository.ListaOpciones{
+		FiltroColumna: filtroColumna,
+		FiltroValor:   filtroValor,
+		Busqueda:      busqueda,
+		OrdenColumna:  orden,
+		Ascendente:    ascendente,
+		Pagina:        pagina,
+		PorPagina:     registrosPorPagina,
+	})
 	if err != nil {
 		data := h.datos(r, def.Nombre, codigo)
 		data["Def"] = def
@@ -113,13 +186,19 @@ func (h *BasesHandler) lista(w http.ResponseWriter, r *http.Request, esHija bool
 		return
 	}
 
-	base := "/bases/tablas/" + codigo
-	if esHija {
-		base += "/hijos"
-	}
 	columnas := make([]columnaVista, 0, len(def.Campos))
 	for _, c := range def.Campos {
-		columnas = append(columnas, columnaVista{Etiqueta: c.Etiqueta})
+		activa := c.Nombre == ordenEfectivo
+		nuevaAscendente := true
+		if activa && ascendente {
+			nuevaAscendente = false
+		}
+		columnas = append(columnas, columnaVista{
+			Etiqueta:   c.Etiqueta,
+			OrdenURL:   urlLista(base, busqueda, esHija, padreValor, c.Nombre, nuevaAscendente, 1),
+			Activa:     activa,
+			Ascendente: ascendente,
+		})
 	}
 
 	vistas := make([]filaVista, 0, len(filas))
@@ -143,6 +222,47 @@ func (h *BasesHandler) lista(w http.ResponseWriter, r *http.Request, esHija bool
 		vistas = append(vistas, vista)
 	}
 
+	totalPaginas := (total + registrosPorPagina - 1) / registrosPorPagina
+	if totalPaginas < 1 {
+		totalPaginas = 1
+	}
+	desde, hasta := 0, 0
+	if total > 0 {
+		desde = (pagina-1)*registrosPorPagina + 1
+		hasta = desde + len(vistas) - 1
+	}
+	paginacion := paginacionVista{
+		Pagina:       pagina,
+		TotalPaginas: totalPaginas,
+		Total:        total,
+		Desde:        desde,
+		Hasta:        hasta,
+	}
+	if pagina > 1 {
+		paginacion.AnteriorURL = urlLista(base, busqueda, esHija, padreValor, ordenEfectivo, ascendente, pagina-1)
+	}
+	if pagina < totalPaginas {
+		paginacion.SiguienteURL = urlLista(base, busqueda, esHija, padreValor, ordenEfectivo, ascendente, pagina+1)
+	}
+	inicio := pagina - 2
+	if inicio < 1 {
+		inicio = 1
+	}
+	fin := inicio + 4
+	if fin > totalPaginas {
+		fin = totalPaginas
+	}
+	if inicio = fin - 4; inicio < 1 {
+		inicio = 1
+	}
+	for i := inicio; i <= fin; i++ {
+		paginacion.Paginas = append(paginacion.Paginas, paginaVista{
+			Numero: i,
+			URL:    urlLista(base, busqueda, esHija, padreValor, ordenEfectivo, ascendente, i),
+			Activa: i == pagina,
+		})
+	}
+
 	data := h.datos(r, def.Nombre, codigo)
 	data["Def"] = def
 	data["Columnas"] = columnas
@@ -150,6 +270,11 @@ func (h *BasesHandler) lista(w http.ResponseWriter, r *http.Request, esHija bool
 	data["EsHija"] = esHija
 	data["Padre"] = padreValor
 	data["PadreEtiqueta"] = padreEtiqueta
+	data["ListaURL"] = base
+	data["Busqueda"] = busqueda
+	data["Orden"] = orden
+	data["LimpiarURL"] = urlLista(base, "", esHija, padreValor, "", true, 1)
+	data["Paginacion"] = paginacion
 	h.flash(data, r.URL.Query().Get("ok"), r.URL.Query().Get("detalle"))
 	if def.Hija != nil {
 		data["HijaNombre"] = def.Hija.Nombre
@@ -190,6 +315,9 @@ func (h *BasesHandler) HijoNuevoPage(w http.ResponseWriter, r *http.Request) {
 
 func (h *BasesHandler) nuevo(w http.ResponseWriter, r *http.Request, esHija bool) {
 	codigo := chi.URLParam(r, "codigo")
+	if !h.autorizar(w, r, codigo) {
+		return
+	}
 	def, padre, ok := definicion(codigo, esHija)
 	if !ok {
 		http.NotFound(w, r)
@@ -216,6 +344,9 @@ func (h *BasesHandler) HijoNuevoPost(w http.ResponseWriter, r *http.Request) {
 
 func (h *BasesHandler) nuevoPost(w http.ResponseWriter, r *http.Request, esHija bool) {
 	codigo := chi.URLParam(r, "codigo")
+	if !h.autorizar(w, r, codigo) {
+		return
+	}
 	def, padre, ok := definicion(codigo, esHija)
 	if !ok {
 		http.NotFound(w, r)
@@ -248,6 +379,9 @@ func (h *BasesHandler) HijoEditarPage(w http.ResponseWriter, r *http.Request) {
 
 func (h *BasesHandler) editar(w http.ResponseWriter, r *http.Request, esHija bool) {
 	codigo := chi.URLParam(r, "codigo")
+	if !h.autorizar(w, r, codigo) {
+		return
+	}
 	def, padre, ok := definicion(codigo, esHija)
 	if !ok {
 		http.NotFound(w, r)
@@ -272,6 +406,9 @@ func (h *BasesHandler) HijoEditarPost(w http.ResponseWriter, r *http.Request) {
 
 func (h *BasesHandler) editarPost(w http.ResponseWriter, r *http.Request, esHija bool) {
 	codigo := chi.URLParam(r, "codigo")
+	if !h.autorizar(w, r, codigo) {
+		return
+	}
 	def, padre, ok := definicion(codigo, esHija)
 	if !ok {
 		http.NotFound(w, r)
@@ -335,7 +472,7 @@ func (h *BasesHandler) renderFormularioConError(w http.ResponseWriter, r *http.R
 		opciones[c.Nombre] = lista
 	}
 
-	title := def.Nombre
+	var title string
 	if editar {
 		title = "Modificar " + strings.ToLower(def.Nombre)
 	} else {
@@ -370,6 +507,9 @@ func (h *BasesHandler) HijoEliminarPost(w http.ResponseWriter, r *http.Request) 
 
 func (h *BasesHandler) eliminar(w http.ResponseWriter, r *http.Request, esHija bool) {
 	codigo := chi.URLParam(r, "codigo")
+	if !h.autorizar(w, r, codigo) {
+		return
+	}
 	def, _, ok := definicion(codigo, esHija)
 	if !ok {
 		http.NotFound(w, r)
@@ -415,6 +555,32 @@ func listaPath(codigo string, esHija bool, padre string) string {
 		return base
 	}
 	return base + "/hijos?padre=" + url.QueryEscape(padre)
+}
+
+// urlLista arma los enlaces del listado conservando búsqueda, orden y página.
+func urlLista(base, busqueda string, esHija bool, padre, orden string, ascendente bool, pagina int) string {
+	valores := url.Values{}
+	if busqueda != "" {
+		valores.Set("q", busqueda)
+	}
+	if esHija {
+		valores.Set("padre", padre)
+	}
+	if orden != "" {
+		valores.Set("orden", orden)
+		if ascendente {
+			valores.Set("dir", "asc")
+		} else {
+			valores.Set("dir", "desc")
+		}
+	}
+	if pagina > 1 {
+		valores.Set("pagina", strconv.Itoa(pagina))
+	}
+	if len(valores) == 0 {
+		return base
+	}
+	return base + "?" + valores.Encode()
 }
 
 func claveDesdeQuery(def models.TablaDef, r *http.Request) map[string]string {

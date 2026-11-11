@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	_ "embed"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -53,7 +54,61 @@ func (r *AccesoRepository) EnsureSchema() error {
 	}
 	_, _ = r.db.Exec(`ALTER TABLE gen_directorio ADD COLUMN IF NOT EXISTS estado VARCHAR(1) DEFAULT 'V'`)
 	_, _ = r.db.Exec(`UPDATE gen_directorio SET estado = 'V' WHERE estado IS NULL OR btrim(estado) = ''`)
+	if err := r.sincronizarPermisosBases(); err != nil {
+		return err
+	}
 	return r.migrarLegadoMantener()
+}
+
+// sincronizarPermisosBases registra el módulo Bases y un permiso por cada
+// mantenedor de tablas. El perfil protegido conserva todos esos permisos.
+func (r *AccesoRepository) sincronizarPermisosBases() error {
+	if _, err := r.db.Exec(`
+		INSERT INTO seg_modulo (codigo, nombre, descripcion, orden)
+		VALUES ('bases', 'Bases de datos', 'Tablas maestras compartidas por el sistema.', 5)
+		ON CONFLICT (codigo) DO UPDATE
+		SET nombre = EXCLUDED.nombre,
+		    descripcion = EXCLUDED.descripcion,
+		    orden = EXCLUDED.orden`); err != nil {
+		return err
+	}
+	if _, err := r.db.Exec(`
+		UPDATE seg_modulo SET orden = 6
+		WHERE codigo = 'administracion' AND orden = 5`); err != nil {
+		return err
+	}
+	for i, tabla := range models.Tablas() {
+		if _, err := r.db.Exec(`
+			INSERT INTO seg_permiso (codigo, codigo_modulo, accion, nombre, orden)
+			VALUES ($1, 'bases', 'mantener', $2, $3)
+			ON CONFLICT (codigo) DO UPDATE
+			SET codigo_modulo = EXCLUDED.codigo_modulo,
+			    accion = EXCLUDED.accion,
+			    nombre = EXCLUDED.nombre,
+			    orden = EXCLUDED.orden`,
+			models.PermisoTabla(tabla.Codigo), tabla.Nombre, 500+i); err != nil {
+			return err
+		}
+	}
+	if _, err := r.db.Exec(`
+		INSERT INTO seg_perfil_permiso (id_perfil, codigo_permiso, estado)
+		SELECT p.id_perfil, pe.codigo, 'V'
+		FROM seg_perfil p
+		CROSS JOIN seg_permiso pe
+		WHERE p.protegido = TRUE
+		  AND p.estado = 'V'
+		  AND pe.codigo_modulo = 'bases'
+		ON CONFLICT (id_perfil, codigo_permiso) DO UPDATE SET estado = 'V'`); err != nil {
+		return err
+	}
+	_, err := r.db.Exec(`
+		INSERT INTO seg_perfil_modulo (id_perfil, codigo_modulo, estado)
+		SELECT DISTINCT pp.id_perfil, 'bases', 'V'
+		FROM seg_perfil_permiso pp
+		JOIN seg_permiso pe ON pe.codigo = pp.codigo_permiso
+		WHERE pp.estado = 'V' AND pe.codigo_modulo = 'bases'
+		ON CONFLICT (id_perfil, codigo_modulo) DO UPDATE SET estado = 'V'`)
+	return err
 }
 
 // migrarLegadoMantener asigna una sola vez los permisos de mantención que antes
@@ -180,6 +235,67 @@ func (r *AccesoRepository) Perfiles() ([]models.Perfil, error) {
 	return perfiles, rows.Err()
 }
 
+// PerfilesPagina devuelve una página de perfiles vigentes con búsqueda y orden.
+func (r *AccesoRepository) PerfilesPagina(busqueda, orden string, ascendente bool, pagina, porPagina int) ([]models.Perfil, int, int, error) {
+	filtro := ""
+	var args []interface{}
+	if busqueda = strings.TrimSpace(busqueda); busqueda != "" {
+		args = append(args, "%"+busqueda+"%")
+		filtro = ` AND (p.nombre ILIKE $1 OR p.descripcion ILIKE $1 OR EXISTS (
+			SELECT 1 FROM seg_perfil_modulo pmb
+			JOIN seg_modulo mb ON mb.codigo = pmb.codigo_modulo
+			WHERE pmb.id_perfil = p.id_perfil AND pmb.estado = 'V' AND mb.nombre ILIKE $1))`
+	}
+
+	var total int
+	if err := r.db.QueryRow(`SELECT COUNT(*) FROM seg_perfil p WHERE p.estado = 'V'`+filtro, args...).Scan(&total); err != nil {
+		return nil, 0, 1, err
+	}
+	pagina, _ = normalizarPagina(total, porPagina, pagina)
+
+	expresion := "p.nombre"
+	switch orden {
+	case "modulos":
+		expresion = `COALESCE(string_agg(m.nombre, ', ' ORDER BY m.orden), '')`
+	case "usuarios":
+		expresion = `(SELECT COUNT(*) FROM seg_usuario_perfil upc WHERE upc.id_perfil = p.id_perfil AND upc.estado = 'V')`
+	}
+	direccion := "ASC"
+	if !ascendente {
+		direccion = "DESC"
+	}
+
+	args = append(args, porPagina, (pagina-1)*porPagina)
+	query := fmt.Sprintf(`
+		SELECT p.id_perfil, p.nombre, p.descripcion, p.protegido,
+		       COALESCE(string_agg(m.codigo, ',' ORDER BY m.orden), ''),
+		       COALESCE(string_agg(m.nombre, ', ' ORDER BY m.orden), ''),
+		       (SELECT COUNT(*) FROM seg_usuario_perfil up WHERE up.id_perfil = p.id_perfil AND up.estado = 'V')
+		FROM seg_perfil p
+		LEFT JOIN seg_perfil_modulo pm ON pm.id_perfil = p.id_perfil AND pm.estado = 'V'
+		LEFT JOIN seg_modulo m ON m.codigo = pm.codigo_modulo
+		WHERE p.estado = 'V'%s
+		GROUP BY p.id_perfil
+		ORDER BY %s %s, p.id_perfil ASC
+		LIMIT $%d OFFSET $%d`, filtro, expresion, direccion, len(args)-1, len(args))
+
+	rows, err := r.db.Query(query, args...)
+	if err != nil {
+		return nil, 0, pagina, err
+	}
+	defer rows.Close()
+
+	var perfiles []models.Perfil
+	for rows.Next() {
+		p, err := scanPerfil(rows.Scan)
+		if err != nil {
+			return nil, 0, pagina, err
+		}
+		perfiles = append(perfiles, p)
+	}
+	return perfiles, total, pagina, rows.Err()
+}
+
 func (r *AccesoRepository) Perfil(id int) (models.Perfil, error) {
 	row := r.db.QueryRow(`
 		SELECT p.id_perfil, p.nombre, p.descripcion, p.protegido,
@@ -260,10 +376,12 @@ func scanPerfil(scan func(...interface{}) error) (models.Perfil, error) {
 
 func (r *AccesoRepository) Usuarios() ([]models.UsuarioAcceso, error) {
 	rows, err := r.db.Query(`
-		SELECT id_usuario, login, COALESCE(nombre, ''), COALESCE(estado, ''),
-		       COALESCE(id_empleado, 0)
-		FROM gen_usuario
-		ORDER BY nombre, login`)
+		SELECT u.id_usuario, u.login, COALESCE(u.nombre, ''), COALESCE(u.estado, ''),
+		       COALESCE(u.id_empleado, 0),
+		       COALESCE(NULLIF(btrim(COALESCE(d.nombre, '') || ' ' || COALESCE(d.apellido, '')), ''), '')
+		FROM gen_usuario u
+		LEFT JOIN gen_directorio d ON d.id_empleado = u.id_empleado
+		ORDER BY u.nombre, u.login`)
 	if err != nil {
 		return nil, err
 	}
@@ -272,7 +390,7 @@ func (r *AccesoRepository) Usuarios() ([]models.UsuarioAcceso, error) {
 	var usuarios []models.UsuarioAcceso
 	for rows.Next() {
 		var u models.UsuarioAcceso
-		if err := rows.Scan(&u.IDUsuario, &u.Login, &u.Nombre, &u.Estado, &u.IDEmpleado); err != nil {
+		if err := rows.Scan(&u.IDUsuario, &u.Login, &u.Nombre, &u.Estado, &u.IDEmpleado, &u.Empleado); err != nil {
 			return nil, err
 		}
 		u.Estado = strings.TrimSpace(u.Estado)
@@ -293,6 +411,119 @@ func (r *AccesoRepository) Usuarios() ([]models.UsuarioAcceso, error) {
 		}
 	}
 	return usuarios, nil
+}
+
+// UsuariosPagina devuelve una página de usuarios con búsqueda y orden.
+func (r *AccesoRepository) UsuariosPagina(busqueda, orden string, ascendente bool, pagina, porPagina int) ([]models.UsuarioAcceso, int, int, error) {
+	filtro := ""
+	var args []interface{}
+	if busqueda = strings.TrimSpace(busqueda); busqueda != "" {
+		args = append(args, "%"+busqueda+"%")
+		filtro = ` AND (u.login ILIKE $1 OR COALESCE(u.nombre, '') ILIKE $1
+			OR COALESCE(d.nombre, '') ILIKE $1 OR COALESCE(d.apellido, '') ILIKE $1
+			OR EXISTS (
+				SELECT 1 FROM seg_usuario_perfil upb
+				JOIN seg_perfil pb ON pb.id_perfil = upb.id_perfil AND pb.estado = 'V'
+				WHERE upb.id_usuario = u.id_usuario AND upb.estado = 'V' AND pb.nombre ILIKE $1))`
+	}
+
+	var total int
+	if err := r.db.QueryRow(`
+		SELECT COUNT(*)
+		FROM gen_usuario u
+		LEFT JOIN gen_directorio d ON d.id_empleado = u.id_empleado
+		WHERE TRUE`+filtro, args...).Scan(&total); err != nil {
+		return nil, 0, 1, err
+	}
+	pagina, _ = normalizarPagina(total, porPagina, pagina)
+
+	empleado := `COALESCE(NULLIF(btrim(COALESCE(d.nombre, '') || ' ' || COALESCE(d.apellido, '')), ''), '')`
+	perfiles := `COALESCE(string_agg(p.nombre, ', ' ORDER BY p.nombre), '')`
+	expresion := "u.nombre"
+	switch orden {
+	case "login":
+		expresion = "u.login"
+	case "estado":
+		expresion = "u.estado"
+	case "empleado":
+		expresion = empleado
+	case "perfiles":
+		expresion = perfiles
+	}
+	direccion := "ASC"
+	if !ascendente {
+		direccion = "DESC"
+	}
+
+	args = append(args, porPagina, (pagina-1)*porPagina)
+	query := fmt.Sprintf(`
+		SELECT u.id_usuario, u.login, COALESCE(u.nombre, ''), COALESCE(u.estado, ''),
+		       COALESCE(u.id_empleado, 0), %s, %s
+		FROM gen_usuario u
+		LEFT JOIN gen_directorio d ON d.id_empleado = u.id_empleado
+		LEFT JOIN seg_usuario_perfil up ON up.id_usuario = u.id_usuario AND up.estado = 'V'
+		LEFT JOIN seg_perfil p ON p.id_perfil = up.id_perfil AND p.estado = 'V'
+		WHERE TRUE%s
+		GROUP BY u.id_usuario, d.nombre, d.apellido
+		ORDER BY %s %s, u.login ASC
+		LIMIT $%d OFFSET $%d`, empleado, perfiles, filtro, expresion, direccion, len(args)-1, len(args))
+
+	rows, err := r.db.Query(query, args...)
+	if err != nil {
+		return nil, 0, pagina, err
+	}
+	defer rows.Close()
+
+	var usuarios []models.UsuarioAcceso
+	for rows.Next() {
+		var u models.UsuarioAcceso
+		if err := rows.Scan(&u.IDUsuario, &u.Login, &u.Nombre, &u.Estado, &u.IDEmpleado, &u.Empleado, &u.Perfiles); err != nil {
+			return nil, 0, pagina, err
+		}
+		u.Estado = strings.TrimSpace(u.Estado)
+		usuarios = append(usuarios, u)
+	}
+	return usuarios, total, pagina, rows.Err()
+}
+
+// Usuario devuelve un usuario con sus perfiles.
+func (r *AccesoRepository) Usuario(id string) (models.UsuarioAcceso, error) {
+	usuarios, err := r.Usuarios()
+	if err != nil {
+		return models.UsuarioAcceso{}, err
+	}
+	for _, u := range usuarios {
+		if u.IDUsuario == id {
+			return u, nil
+		}
+	}
+	return models.UsuarioAcceso{}, sql.ErrNoRows
+}
+
+// EliminarUsuario desactiva la cuenta y conserva su historial de auditoría.
+func (r *AccesoRepository) EliminarUsuario(id string) error {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	var existe bool
+	if err := tx.QueryRow(`SELECT EXISTS (SELECT 1 FROM gen_usuario WHERE id_usuario = $1)`, id).Scan(&existe); err != nil {
+		return err
+	}
+	if !existe {
+		return ErrDatos
+	}
+	if _, err := tx.Exec(`UPDATE gen_usuario SET estado = '0' WHERE id_usuario = $1`, id); err != nil {
+		return err
+	}
+	if ok, err := quedaAlgunAdminActivo(tx); err != nil {
+		return err
+	} else if !ok {
+		return ErrUltimoAdmin
+	}
+	return tx.Commit()
 }
 
 type asignacion struct {
@@ -380,6 +611,9 @@ func (r *AccesoRepository) ActualizarPerfil(id int, nombre, descripcion string, 
 		for _, accion := range []string{"consultar", "ingresar", "aprobar", "mantener"} {
 			permisos = asegurar(permisos, "administracion."+accion)
 		}
+		for _, tabla := range models.Tablas() {
+			permisos = asegurar(permisos, models.PermisoTabla(tabla.Codigo))
+		}
 	}
 	if len(permisos) == 0 {
 		return ErrDatos
@@ -418,24 +652,6 @@ func (r *AccesoRepository) EliminarPerfil(id int) error {
 		return ErrPerfilProtegido
 	}
 	if err := sinFilas(tx.Exec(`UPDATE seg_perfil SET estado = 'E' WHERE id_perfil = $1 AND estado = 'V'`, id)); err != nil {
-		return err
-	}
-	if ok, err := quedaAlgunAdmin(tx); err != nil {
-		return err
-	} else if !ok {
-		return ErrUltimoAdmin
-	}
-	return tx.Commit()
-}
-
-func (r *AccesoRepository) AsignarPerfiles(idUsuario string, perfiles []int) error {
-	tx, err := r.db.Begin()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	if err := reemplazarPerfilesUsuario(tx, idUsuario, perfiles); err != nil {
 		return err
 	}
 	if ok, err := quedaAlgunAdmin(tx); err != nil {

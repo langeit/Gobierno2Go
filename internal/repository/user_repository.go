@@ -160,19 +160,6 @@ func (r *UserRepository) MigrarContrasenas() error {
 	return nil
 }
 
-// GetByID recupera un usuario por su identificador.
-func (r *UserRepository) GetByID(id string) (*models.User, error) {
-	query := `SELECT id_usuario, login, COALESCE(nombre, ''), COALESCE(tipo, '3'), estado
-	          FROM gen_usuario WHERE id_usuario = $1`
-	row := r.db.QueryRow(query, id)
-
-	var user models.User
-	if err := row.Scan(&user.IDUsuario, &user.Login, &user.Nombre, &user.Tipo, &user.Estado); err != nil {
-		return nil, err
-	}
-	return &user, nil
-}
-
 // GetCorrespondenciaInfo devuelve la etapa (centro) principal del usuario.
 func (r *UserRepository) GetCorrespondenciaInfo(idUsuario string) (int, string, error) {
 	query := `SELECT ue.cod_etapa, e.descripcion

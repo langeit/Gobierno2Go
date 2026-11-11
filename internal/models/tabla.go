@@ -2,6 +2,14 @@ package models
 
 import "strconv"
 
+// ModuloBases es el módulo de perfiles que autoriza las tablas maestras.
+const ModuloBases = "bases"
+
+// PermisoTabla devuelve el proceso que autoriza un mantenedor de Bases.
+func PermisoTabla(codigo string) string {
+	return "bases.tabla." + codigo
+}
+
 // Tipos de campo que sabe dibujar y validar el mantenedor de Bases/Tablas.
 const (
 	CampoTexto      = "texto"
@@ -181,9 +189,10 @@ var tablaComuna = TablaDef{
 	Descripcion: "Comunas agrupadas por región.",
 	Etiqueta:    "descripcion",
 	Campos: []TablaCampo{
-		campoClaveTexto("codigo", "Código", 4),
-		campoTexto("descripcion", "Descripción", 20, true),
+		campoClaveTexto("codigo", "Código", 5),
+		campoTexto("descripcion", "Descripción", 50, true),
 		campoReferencia("codigo_region", "Región", "tab_region", true, false),
+		campoReferencia("codigo_provincia", "Provincia", "tab_provincia", true, false),
 	},
 	Orden: []string{"descripcion"},
 	UsadaPor: []TablaUso{

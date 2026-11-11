@@ -50,7 +50,10 @@ func pageData(r *http.Request) map[string]interface{} {
 
 // renderPage parsea el layout indicado junto con la página y los ejecuta.
 func renderPage(w http.ResponseWriter, templatesDir, layoutFile, layoutName, pageFile string, data map[string]interface{}) {
-	files := []string{filepath.Join(templatesDir, layoutFile)}
+	files := []string{
+		filepath.Join(templatesDir, layoutFile),
+		filepath.Join(templatesDir, "layout_sidebar.html"),
+	}
 	if pageFile != "" {
 		files = append(files, filepath.Join(templatesDir, pageFile))
 	}

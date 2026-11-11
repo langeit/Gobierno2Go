@@ -4,7 +4,9 @@ import (
 	"errors"
 	"net"
 	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 
 	"Gobierno2Go/internal/models"
 	"Gobierno2Go/internal/repository"
@@ -31,6 +33,8 @@ func (h *AccesoHandler) setFlash(data map[string]interface{}, ok string) {
 		data["Success"] = "Usuario creado correctamente."
 	case "editado":
 		data["Success"] = "Usuario actualizado correctamente."
+	case "usuario_eliminado":
+		data["Success"] = "Usuario eliminado correctamente."
 	case "asignado":
 		data["Success"] = "Perfiles del usuario actualizados."
 	case "protegido":
@@ -95,16 +99,44 @@ func (h *AccesoHandler) PerfilesPage(w http.ResponseWriter, r *http.Request) {
 	if _, ok := h.usuario(w, r); !ok {
 		return
 	}
+	base := "/admin/perfiles"
+	busqueda, orden, ascendente, pagina := parametrosLista(r, "nombre", "modulos", "usuarios")
+	perfiles, total, pagina, err := h.repo.PerfilesPagina(busqueda, orden, ascendente, pagina, registrosPorPagina)
+
 	data := pageData(r)
 	data["Title"] = "Perfiles de acceso"
 	h.setFlash(data, r.URL.Query().Get("ok"))
-	if perfiles, err := h.repo.Perfiles(); err == nil {
-		data["Perfiles"] = perfiles
-	} else {
+	if err != nil {
 		data["Error"] = "No se pudieron cargar los perfiles."
+	} else {
+		data["Perfiles"] = perfiles
 	}
-	h.cargarPermisos(data, models.Perfil{})
+	ordenEfectivo := orden
+	if ordenEfectivo == "" {
+		ordenEfectivo = "nombre"
+	}
+	data["Columnas"] = columnasAcceso(base, busqueda, ordenEfectivo, ascendente, []columnaAcceso{
+		{"nombre", "Perfil"},
+		{"modulos", "Módulos"},
+		{"usuarios", "Usuarios"},
+	})
+	data["Busqueda"] = busqueda
+	data["ListaURL"] = base
+	data["LimpiarURL"] = base
+	data["Paginacion"] = paginacionAcceso(base, busqueda, ordenEfectivo, ascendente, pagina, total, len(perfiles))
 	renderPage(w, h.templatesDir, "adm_layout.html", "adm_layout", "adm_perfiles.html", data)
+}
+
+func (h *AccesoHandler) PerfilNuevoPage(w http.ResponseWriter, r *http.Request) {
+	if _, ok := h.usuario(w, r); !ok {
+		return
+	}
+	data := pageData(r)
+	data["Title"] = "Nuevo perfil"
+	h.setFlash(data, r.URL.Query().Get("ok"))
+	data["Perfil"] = models.Perfil{}
+	h.cargarPermisos(data, models.Perfil{})
+	renderPage(w, h.templatesDir, "adm_layout.html", "adm_layout", "adm_perfil_nuevo.html", data)
 }
 
 func (h *AccesoHandler) PerfilNuevoPost(w http.ResponseWriter, r *http.Request) {
@@ -117,7 +149,7 @@ func (h *AccesoHandler) PerfilNuevoPost(w http.ResponseWriter, r *http.Request) 
 	}
 	user, _ := session.FromContext(r.Context())
 	if _, err := h.repo.CrearPerfil(r.FormValue("nombre"), r.FormValue("descripcion"), r.Form["permisos"], enteros(r.Form["ambitos_depto"]), enteros(r.Form["ambitos_etapa"])); err != nil {
-		http.Redirect(w, r, "/admin/perfiles?ok="+h.codigoError(err), http.StatusSeeOther)
+		http.Redirect(w, r, "/admin/perfiles/nuevo?ok="+h.codigoError(err), http.StatusSeeOther)
 		return
 	}
 	_ = h.repo.Registrar(user.UserID, "perfil_creado", r.FormValue("nombre"), clientIP(r))
@@ -175,21 +207,77 @@ func (h *AccesoHandler) UsuariosPage(w http.ResponseWriter, r *http.Request) {
 	if _, ok := h.usuario(w, r); !ok {
 		return
 	}
+	base := "/admin/usuarios"
+	busqueda, orden, ascendente, pagina := parametrosLista(r, "login", "nombre", "estado", "empleado", "perfiles")
+	usuarios, total, pagina, err := h.repo.UsuariosPagina(busqueda, orden, ascendente, pagina, registrosPorPagina)
+
 	data := pageData(r)
-	data["Title"] = "Usuarios y perfiles"
+	data["Title"] = "Usuarios"
 	h.setFlash(data, r.URL.Query().Get("ok"))
-	if usuarios, err := h.repo.Usuarios(); err == nil {
-		data["Usuarios"] = usuarios
-	} else {
+	if err != nil {
 		data["Error"] = "No se pudieron cargar los usuarios."
+	} else {
+		data["Usuarios"] = usuarios
 	}
+	ordenEfectivo := orden
+	if ordenEfectivo == "" {
+		ordenEfectivo = "nombre"
+	}
+	data["Columnas"] = columnasAcceso(base, busqueda, ordenEfectivo, ascendente, []columnaAcceso{
+		{"login", "Login"},
+		{"nombre", "Nombre"},
+		{"estado", "Estado"},
+		{"empleado", "Empleado"},
+		{"perfiles", "Perfiles"},
+	})
+	data["Busqueda"] = busqueda
+	data["ListaURL"] = base
+	data["LimpiarURL"] = base
+	data["Paginacion"] = paginacionAcceso(base, busqueda, ordenEfectivo, ascendente, pagina, total, len(usuarios))
+	renderPage(w, h.templatesDir, "adm_layout.html", "adm_layout", "adm_usuarios.html", data)
+}
+
+func (h *AccesoHandler) UsuarioNuevoPage(w http.ResponseWriter, r *http.Request) {
+	if _, ok := h.usuario(w, r); !ok {
+		return
+	}
+	h.renderUsuarioForm(w, r, models.UsuarioAcceso{Estado: "1"}, false, "")
+}
+
+func (h *AccesoHandler) UsuarioEditarPage(w http.ResponseWriter, r *http.Request, id string) {
+	if _, ok := h.usuario(w, r); !ok {
+		return
+	}
+	usuario, err := h.repo.Usuario(id)
+	if err != nil {
+		http.Redirect(w, r, "/admin/usuarios?ok=error", http.StatusSeeOther)
+		return
+	}
+	h.renderUsuarioForm(w, r, usuario, true, "")
+}
+
+func (h *AccesoHandler) renderUsuarioForm(w http.ResponseWriter, r *http.Request, usuario models.UsuarioAcceso, editar bool, ok string) {
+	data := pageData(r)
+	if editar {
+		data["Title"] = "Editar usuario"
+		data["Accion"] = "/admin/usuarios/" + url.PathEscape(usuario.IDUsuario)
+	} else {
+		data["Title"] = "Nuevo usuario"
+		data["Accion"] = "/admin/usuarios"
+	}
+	data["Usuario"] = usuario
+	data["Editar"] = editar
+	data["VolverURL"] = "/admin/usuarios"
+	h.setFlash(data, ok)
 	if perfiles, err := h.repo.Perfiles(); err == nil {
 		data["Perfiles"] = perfiles
+	} else if _, existe := data["Error"]; !existe {
+		data["Error"] = "No se pudieron cargar los perfiles."
 	}
 	if empleados, err := h.repo.EmpleadosDirectorio(); err == nil {
 		data["Empleados"] = empleados
 	}
-	renderPage(w, h.templatesDir, "adm_layout.html", "adm_layout", "adm_usuarios.html", data)
+	renderPage(w, h.templatesDir, "adm_layout.html", "adm_layout", "adm_usuario_form.html", data)
 }
 
 func (h *AccesoHandler) UsuarioNuevoPost(w http.ResponseWriter, r *http.Request) {
@@ -201,14 +289,19 @@ func (h *AccesoHandler) UsuarioNuevoPost(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	user, _ := session.FromContext(r.Context())
-	ids := enteros(r.Form["perfiles"])
 	idEmpleado, _ := strconv.Atoi(r.FormValue("id_empleado"))
-	login := r.FormValue("login")
-	if err := h.repo.CrearUsuario(login, r.FormValue("password"), r.FormValue("nombre"), idEmpleado, ids); err != nil {
-		http.Redirect(w, r, "/admin/usuarios?ok="+h.codigoError(err), http.StatusSeeOther)
+	usuario := models.UsuarioAcceso{
+		Login:      strings.TrimSpace(r.FormValue("login")),
+		Nombre:     strings.TrimSpace(r.FormValue("nombre")),
+		Estado:     "1",
+		IDEmpleado: idEmpleado,
+		PerfilIDs:  enteros(r.Form["perfiles"]),
+	}
+	if err := h.repo.CrearUsuario(usuario.Login, r.FormValue("password"), usuario.Nombre, idEmpleado, usuario.PerfilIDs); err != nil {
+		h.renderUsuarioForm(w, r, usuario, false, h.codigoError(err))
 		return
 	}
-	_ = h.repo.Registrar(user.UserID, "usuario_creado", login, clientIP(r))
+	_ = h.repo.Registrar(user.UserID, "usuario_creado", usuario.Login, clientIP(r))
 	http.Redirect(w, r, "/admin/usuarios?ok=usuario", http.StatusSeeOther)
 }
 
@@ -222,20 +315,32 @@ func (h *AccesoHandler) UsuarioPost(w http.ResponseWriter, r *http.Request, id s
 	}
 	user, _ := session.FromContext(r.Context())
 	idEmpleado, _ := strconv.Atoi(r.FormValue("id_empleado"))
-	estado := r.FormValue("estado")
+	usuario := models.UsuarioAcceso{
+		IDUsuario:  id,
+		Login:      strings.TrimSpace(r.FormValue("login")),
+		Nombre:     strings.TrimSpace(r.FormValue("nombre")),
+		Estado:     strings.TrimSpace(r.FormValue("estado")),
+		IDEmpleado: idEmpleado,
+		PerfilIDs:  enteros(r.Form["perfiles"]),
+	}
+	if usuario.Login == "" {
+		if actual, err := h.repo.Usuario(id); err == nil {
+			usuario.Login = actual.Login
+		}
+	}
 	err := h.repo.ActualizarUsuario(
 		id,
-		r.FormValue("nombre"),
-		estado,
+		usuario.Nombre,
+		usuario.Estado,
 		r.FormValue("password"),
 		idEmpleado,
-		enteros(r.Form["perfiles"]),
+		usuario.PerfilIDs,
 	)
 	if err != nil {
-		http.Redirect(w, r, "/admin/usuarios?ok="+h.codigoError(err), http.StatusSeeOther)
+		h.renderUsuarioForm(w, r, usuario, true, h.codigoError(err))
 		return
 	}
-	if estado == "0" && h.sessions != nil {
+	if usuario.Estado == "0" && h.sessions != nil {
 		h.sessions.DeleteByUser(id)
 		_ = h.repo.Registrar(user.UserID, "usuario_desactivado", id, clientIP(r))
 	} else {
@@ -246,6 +351,22 @@ func (h *AccesoHandler) UsuarioPost(w http.ResponseWriter, r *http.Request, id s
 		_ = h.repo.Registrar(user.UserID, accion, id, clientIP(r))
 	}
 	http.Redirect(w, r, "/admin/usuarios?ok=editado", http.StatusSeeOther)
+}
+
+func (h *AccesoHandler) UsuarioEliminarPost(w http.ResponseWriter, r *http.Request, id string) {
+	if _, ok := h.usuario(w, r); !ok {
+		return
+	}
+	user, _ := session.FromContext(r.Context())
+	if err := h.repo.EliminarUsuario(id); err != nil {
+		http.Redirect(w, r, "/admin/usuarios?ok="+h.codigoError(err), http.StatusSeeOther)
+		return
+	}
+	if h.sessions != nil {
+		h.sessions.DeleteByUser(id)
+	}
+	_ = h.repo.Registrar(user.UserID, "usuario_eliminado", id, clientIP(r))
+	http.Redirect(w, r, "/admin/usuarios?ok=usuario_eliminado", http.StatusSeeOther)
 }
 
 func (h *AccesoHandler) PermisosPage(w http.ResponseWriter, r *http.Request) {
@@ -334,6 +455,122 @@ func (h *AccesoHandler) usuario(w http.ResponseWriter, r *http.Request) (session
 
 func perfilURL(id int, ok string) string {
 	return "/admin/perfiles/" + strconv.Itoa(id) + "?ok=" + ok
+}
+
+// columnaAcceso describe una columna ordenable de un listado de acceso.
+type columnaAcceso struct {
+	Clave    string
+	Etiqueta string
+}
+
+// parametrosLista lee la búsqueda, el orden y la página de la URL, descartando
+// claves de orden que no estén permitidas para el listado.
+func parametrosLista(r *http.Request, claves ...string) (string, string, bool, int) {
+	busqueda := strings.TrimSpace(r.URL.Query().Get("q"))
+	orden := r.URL.Query().Get("orden")
+	valido := false
+	for _, c := range claves {
+		if c == orden {
+			valido = true
+			break
+		}
+	}
+	if !valido {
+		orden = ""
+	}
+	ascendente := r.URL.Query().Get("dir") != "desc"
+	pagina := 1
+	if n, err := strconv.Atoi(r.URL.Query().Get("pagina")); err == nil && n > 0 {
+		pagina = n
+	}
+	return busqueda, orden, ascendente, pagina
+}
+
+// urlAcceso arma un enlace del listado conservando búsqueda, orden y página.
+func urlAcceso(base, busqueda, orden string, ascendente bool, pagina int) string {
+	valores := url.Values{}
+	if busqueda != "" {
+		valores.Set("q", busqueda)
+	}
+	if orden != "" {
+		valores.Set("orden", orden)
+		if ascendente {
+			valores.Set("dir", "asc")
+		} else {
+			valores.Set("dir", "desc")
+		}
+	}
+	if pagina > 1 {
+		valores.Set("pagina", strconv.Itoa(pagina))
+	}
+	if len(valores) == 0 {
+		return base
+	}
+	return base + "?" + valores.Encode()
+}
+
+// columnasAcceso genera los encabezados ordenables de un listado de acceso.
+func columnasAcceso(base, busqueda, ordenEfectivo string, ascendente bool, columnas []columnaAcceso) map[string]columnaVista {
+	vistas := make(map[string]columnaVista, len(columnas))
+	for _, c := range columnas {
+		activa := c.Clave == ordenEfectivo
+		nuevaAscendente := true
+		if activa && ascendente {
+			nuevaAscendente = false
+		}
+		vistas[c.Clave] = columnaVista{
+			Etiqueta:   c.Etiqueta,
+			OrdenURL:   urlAcceso(base, busqueda, c.Clave, nuevaAscendente, 1),
+			Activa:     activa,
+			Ascendente: ascendente,
+		}
+	}
+	return vistas
+}
+
+// paginacionAcceso genera los enlaces y contadores del paginador.
+func paginacionAcceso(base, busqueda, orden string, ascendente bool, pagina, total, mostrados int) paginacionVista {
+	totalPaginas := (total + registrosPorPagina - 1) / registrosPorPagina
+	if totalPaginas < 1 {
+		totalPaginas = 1
+	}
+	desde, hasta := 0, 0
+	if total > 0 {
+		desde = (pagina-1)*registrosPorPagina + 1
+		hasta = desde + mostrados - 1
+	}
+	paginacion := paginacionVista{
+		Pagina:       pagina,
+		TotalPaginas: totalPaginas,
+		Total:        total,
+		Desde:        desde,
+		Hasta:        hasta,
+	}
+	if pagina > 1 {
+		paginacion.AnteriorURL = urlAcceso(base, busqueda, orden, ascendente, pagina-1)
+	}
+	if pagina < totalPaginas {
+		paginacion.SiguienteURL = urlAcceso(base, busqueda, orden, ascendente, pagina+1)
+	}
+	inicio := pagina - 2
+	if inicio < 1 {
+		inicio = 1
+	}
+	fin := inicio + 4
+	if fin > totalPaginas {
+		fin = totalPaginas
+	}
+	if inicio = fin - 4; inicio < 1 {
+		inicio = 1
+	}
+	for i := inicio; i <= fin; i++ {
+		paginacion.Paginas = append(paginacion.Paginas, paginaVista{
+			Numero: i,
+			URL:    urlAcceso(base, busqueda, orden, ascendente, i),
+			Activa: i == pagina,
+		})
+	}
+	return paginacion
 }
 
 func enteros(vals []string) []int {

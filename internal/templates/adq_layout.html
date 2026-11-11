@@ -8,7 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-50 text-gray-800 flex min-h-screen">
-    <aside class="w-64 bg-slate-900 text-white hidden md:flex flex-col fixed inset-y-0 left-0 shadow-lg">
+    <aside id="sidebar" class="w-64 bg-slate-900 text-white flex flex-col fixed inset-y-0 left-0 shadow-lg transition-transform duration-300 ease-in-out z-30">
         <div class="p-5 text-xl font-bold bg-slate-950 text-center tracking-wide border-b border-slate-800">
             Gobierno2Go
         </div>
@@ -38,8 +38,10 @@
         </nav>
     </aside>
 
-    <div class="flex-1 md:ml-64 flex flex-col">
+    <div id="main-content" class="flex-1 md:ml-64 flex flex-col transition-all duration-300">
         <header class="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center shadow-sm">
+            <div class="flex items-center gap-3 min-w-0">
+                <button id="menu-toggle" type="button" aria-controls="sidebar" aria-expanded="true" class="shrink-0 text-slate-800 focus:outline-none text-2xl font-bold px-2 py-1 rounded hover:bg-gray-100 transition">☰</button>
             <nav class="flex items-center space-x-2 text-xs" aria-label="Breadcrumb">
                 <a href="/dashboard" class="text-slate-500 hover:text-blue-600 hover:underline">Panel general</a>
                 <span class="text-gray-300">›</span>
@@ -47,6 +49,7 @@
                 <span class="text-gray-300">›</span>
                 <span class="text-slate-800 font-semibold">{{.Title}}</span>
             </nav>
+            </div>
             <div class="text-xs text-gray-500">{{if .User}}{{.User.Nombre}}{{end}}</div>
         </header>
 
@@ -61,6 +64,7 @@
             {{block "content" .}}{{end}}
         </main>
     </div>
+    {{template "sidebar_toggle" .}}
 </body>
 </html>
 {{end}}

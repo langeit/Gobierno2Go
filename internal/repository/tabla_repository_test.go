@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"testing"
 
 	"Gobierno2Go/internal/config"
@@ -58,6 +59,62 @@ func TestCRUDTablaRegion(t *testing.T) {
 	}
 	if _, err := repo.Fila(def, map[string]string{"codigo": codigo}); !errors.Is(err, sql.ErrNoRows) {
 		t.Fatalf("se esperaba sql.ErrNoRows, se obtuvo %v", err)
+	}
+}
+
+func TestListarPaginadoBusquedaYOrden(t *testing.T) {
+	db, err := config.ConnectDB()
+	if err != nil {
+		t.Skip("sin base de datos:", err)
+	}
+	t.Cleanup(func() { db.Close() })
+
+	repo := NewTablaRepository(db)
+	def, ok := models.TablaPorCodigo("region")
+	if !ok {
+		t.Fatal("no existe la definición de región")
+	}
+	t.Cleanup(func() { db.Exec(`DELETE FROM tab_region WHERE codigo LIKE 'ZP%'`) })
+	db.Exec(`DELETE FROM tab_region WHERE codigo LIKE 'ZP%'`)
+
+	for i, nombre := range []string{"ZZ Prueba C", "ZZ Prueba A", "ZZ Prueba B"} {
+		valores := map[string]string{"codigo": fmt.Sprintf("ZP%d", i), "descripcion": nombre}
+		if err := repo.Guardar(def, valores, nil, false); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	filas, total, pagina, err := repo.Listar(def, ListaOpciones{
+		Busqueda: "ZZ Prueba", OrdenColumna: "descripcion", Ascendente: true, Pagina: 1, PorPagina: 2,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if total != 3 || pagina != 1 || len(filas) != 2 {
+		t.Fatalf("total=%d pagina=%d filas=%d", total, pagina, len(filas))
+	}
+	if filas[0]["descripcion"] != "ZZ Prueba A" || filas[1]["descripcion"] != "ZZ Prueba B" {
+		t.Fatalf("orden inesperado: %q, %q", filas[0]["descripcion"], filas[1]["descripcion"])
+	}
+
+	filas, total, pagina, err = repo.Listar(def, ListaOpciones{
+		Busqueda: "ZZ Prueba", OrdenColumna: "descripcion", Ascendente: true, Pagina: 2, PorPagina: 2,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if total != 3 || pagina != 2 || len(filas) != 1 || filas[0]["descripcion"] != "ZZ Prueba C" {
+		t.Fatalf("segunda página inesperada: total=%d pagina=%d filas=%v", total, pagina, filas)
+	}
+
+	filas, _, _, err = repo.Listar(def, ListaOpciones{
+		Busqueda: "ZZ Prueba", OrdenColumna: "descripcion", Ascendente: false, Pagina: 1, PorPagina: 2,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if filas[0]["descripcion"] != "ZZ Prueba C" || filas[1]["descripcion"] != "ZZ Prueba B" {
+		t.Fatalf("orden descendente inesperado: %q, %q", filas[0]["descripcion"], filas[1]["descripcion"])
 	}
 }
 

@@ -102,6 +102,7 @@ type UsuarioAcceso struct {
 	Nombre     string
 	Estado     string
 	IDEmpleado int
+	Empleado   string
 	PerfilIDs  []int
 	Perfiles   string
 }

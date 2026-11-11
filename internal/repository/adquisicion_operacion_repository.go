@@ -16,14 +16,6 @@ func datosf(formato string, args ...any) error {
 	return fmt.Errorf("%w: "+formato, append([]any{ErrDatos}, args...)...)
 }
 
-func nullSiVacio(s string) any {
-	s = strings.TrimSpace(s)
-	if s == "" {
-		return nil
-	}
-	return s
-}
-
 func fechaONil(s string) (any, error) {
 	s = strings.TrimSpace(s)
 	if s == "" {
@@ -356,14 +348,14 @@ func (r *AdquisicionesRepository) ActualizarOrden(in models.OrdenEntrada) error 
 	if err != nil {
 		return err
 	}
-	sub, iva, total := totalesOrden(in, pct)
+	sub, _, _ := totalesOrden(in, pct)
 	for _, l := range actual.Lineas {
 		if l.Facturado {
 			sub += float64(l.ValorTotal)
 		}
 	}
-	iva = sub * pct / 100
-	total = sub + iva
+	iva := sub * pct / 100
+	total := sub + iva
 
 	tx, err := r.db.Begin()
 	if err != nil {

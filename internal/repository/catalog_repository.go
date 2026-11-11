@@ -44,10 +44,6 @@ func (r *CatalogRepository) Acciones() ([]models.CatalogItem, error) {
 	return r.queryCatalog(`SELECT cod_accion, desc_accion FROM cor_accion_docto ORDER BY desc_accion`)
 }
 
-func (r *CatalogRepository) Etapas() ([]models.CatalogItem, error) {
-	return r.queryCatalog(`SELECT cod_etapa::text, descripcion FROM cor_etapa ORDER BY descripcion`)
-}
-
 // UsuariosPorEtapa lista los usuarios de un centro, excluyendo al usuario actual.
 func (r *CatalogRepository) UsuariosPorEtapa(codEtapa int, excluirID string) ([]models.UserOption, error) {
 	query := `SELECT u.id_usuario, COALESCE(u.nombre, u.login)

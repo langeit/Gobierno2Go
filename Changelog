@@ -1,5 +1,40 @@
 # Changelog
 
+## [2.0.8] - 2026-11-11
+
+### Añadido
+
+- Provincias y comunas con códigos CUT, relacionadas con su región y provincia.
+- Búsqueda por texto, orden por columna y paginación en los listados de Bases, perfiles y usuarios.
+- Formularios independientes para crear y editar usuarios y perfiles.
+- Botón para mostrar u ocultar el menú lateral en todos los módulos, conservando el estado entre pantallas.
+
+### Cambiado
+
+- Las vistas principales de usuarios y perfiles funcionan como CRUD.
+- La eliminación de usuarios es lógica para conservar el historial y las referencias existentes.
+
+### Corregido
+
+- Se eliminaron funciones y plantillas sin uso, además de asignaciones innecesarias.
+
+## [2.0.7] - 2026-11-11
+
+### Añadido
+
+- Módulo `bases` en el sistema de perfiles, con un permiso por cada tabla del menú Bases/Tablas.
+- El menú lateral, el panel general y el menú de Bases muestran solo las tablas autorizadas para el usuario.
+- Validación del permiso de la tabla al abrir un listado, formulario o realizar una operación.
+
+### Cambiado
+
+- Las rutas `/bases` dejaron de depender del módulo Administración y ahora usan el módulo Bases.
+- El perfil protegido conserva todos los permisos de tablas.
+
+### Base de datos
+
+- Se sincronizan al iniciar el módulo `bases` y los permisos `bases.tabla.<código>` de cada mantenedor.
+
 ## [2.0.6] - 2026-11-11
 
 ### Añadido

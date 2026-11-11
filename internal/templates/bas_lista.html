@@ -13,12 +13,30 @@
     <a href="{{.NuevoURL}}" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-sm transition">+ Agregar</a>
 </div>
 
+<form method="get" action="{{.ListaURL}}" class="mb-4 flex flex-col sm:flex-row gap-2 sm:items-center">
+    {{if .EsHija}}<input type="hidden" name="padre" value="{{.Padre}}">{{end}}
+    <div class="relative flex-1 max-w-md">
+        <input type="search" name="q" value="{{.Busqueda}}" placeholder="Buscar por código, descripción o referencia..."
+               class="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        <span class="absolute left-3 top-2.5 text-gray-400 text-sm">⌕</span>
+    </div>
+    <button type="submit" class="px-4 py-2 bg-slate-700 hover:bg-slate-800 text-white text-sm font-medium rounded-lg transition">Buscar</button>
+    {{if .Busqueda}}
+    <a href="{{.LimpiarURL}}" class="px-4 py-2 text-sm text-gray-600 hover:text-blue-600 hover:underline">Limpiar</a>
+    {{end}}
+</form>
+
 <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-x-auto">
     <table class="min-w-full text-sm">
         <thead class="bg-slate-100 text-slate-600">
             <tr>
                 {{range .Columnas}}
-                <th class="text-left px-4 py-3 font-semibold whitespace-nowrap">{{.Etiqueta}}</th>
+                <th class="text-left px-4 py-3 font-semibold whitespace-nowrap">
+                    <a href="{{.OrdenURL}}" class="inline-flex items-center gap-1 hover:text-blue-600 {{if .Activa}}text-blue-700{{end}}">
+                        <span>{{.Etiqueta}}</span>
+                        {{if .Activa}}{{if .Ascendente}}<span class="text-[10px]">▲</span>{{else}}<span class="text-[10px]">▼</span>{{end}}{{else}}<span class="text-[10px] text-gray-400">↕</span>{{end}}
+                    </a>
+                </th>
                 {{end}}
                 <th class="text-right px-4 py-3 font-semibold">Acciones</th>
             </tr>
@@ -45,9 +63,40 @@
                 </td>
             </tr>
             {{else}}
-            <tr><td colspan="{{len .Columnas | add 1}}" class="px-4 py-12 text-center text-gray-500">No hay registros vigentes.</td></tr>
+            <tr><td colspan="{{len .Columnas | add 1}}" class="px-4 py-12 text-center text-gray-500">
+                {{if .Busqueda}}No se encontraron registros para "{{.Busqueda}}".{{else}}No hay registros vigentes.{{end}}
+            </td></tr>
             {{end}}
         </tbody>
     </table>
 </div>
+
+{{with .Paginacion}}
+{{if .Total}}
+<div class="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm">
+    <p class="text-gray-600">Mostrando <span class="font-medium text-slate-800">{{.Desde}}–{{.Hasta}}</span> de <span class="font-medium text-slate-800">{{.Total}}</span> registros</p>
+    {{if gt .TotalPaginas 1}}
+    <nav class="flex items-center gap-1" aria-label="Paginación">
+        {{if .AnteriorURL}}
+        <a href="{{.AnteriorURL}}" class="px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition">Anterior</a>
+        {{else}}
+        <span class="px-3 py-1.5 rounded border border-gray-200 text-gray-300">Anterior</span>
+        {{end}}
+        {{range .Paginas}}
+        {{if .Activa}}
+        <span class="px-3 py-1.5 rounded border border-blue-600 bg-blue-600 text-white font-medium">{{.Numero}}</span>
+        {{else}}
+        <a href="{{.URL}}" class="px-3 py-1.5 rounded border border-gray-300 text-gray-700 hover:bg-gray-100 transition">{{.Numero}}</a>
+        {{end}}
+        {{end}}
+        {{if .SiguienteURL}}
+        <a href="{{.SiguienteURL}}" class="px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition">Siguiente</a>
+        {{else}}
+        <span class="px-3 py-1.5 rounded border border-gray-200 text-gray-300">Siguiente</span>
+        {{end}}
+    </nav>
+    {{end}}
+</div>
+{{end}}
+{{end}}
 {{end}}

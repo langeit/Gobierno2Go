@@ -47,7 +47,10 @@ func (r *TablaRepository) consultar(def models.TablaDef, condicion string, args 
 		}
 		query += " ORDER BY " + strings.Join(orden, ", ")
 	}
+	return r.consultarSQL(query, args...)
+}
 
+func (r *TablaRepository) consultarSQL(query string, args ...interface{}) ([]map[string]string, error) {
 	rows, err := r.db.Query(query, args...)
 	if err != nil {
 		return nil, err
@@ -98,15 +101,128 @@ func valorTexto(v interface{}) string {
 	}
 }
 
-// Listar devuelve las filas vigentes, opcionalmente filtradas por una columna.
-func (r *TablaRepository) Listar(def models.TablaDef, filtroColumna, filtroValor string) ([]map[string]string, error) {
-	condicion := "estado = 'V'"
-	var args []interface{}
-	if filtroColumna != "" {
-		condicion += " AND " + pq.QuoteIdentifier(filtroColumna) + " = $1"
-		args = append(args, filtroValor)
+// normalizarPagina acota la página pedida al rango válido para el total indicado.
+func normalizarPagina(total, porPagina, pagina int) (int, int) {
+	if porPagina <= 0 {
+		porPagina = 15
 	}
-	return r.consultar(def, condicion, args...)
+	totalPaginas := (total + porPagina - 1) / porPagina
+	if totalPaginas < 1 {
+		totalPaginas = 1
+	}
+	if pagina < 1 {
+		pagina = 1
+	}
+	if pagina > totalPaginas {
+		pagina = totalPaginas
+	}
+	return pagina, totalPaginas
+}
+
+// ListaOpciones agrupa el filtro, la búsqueda, el orden y la página del listado.
+type ListaOpciones struct {
+	FiltroColumna string
+	FiltroValor   string
+	Busqueda      string
+	OrdenColumna  string
+	Ascendente    bool
+	Pagina        int
+	PorPagina     int
+}
+
+// Listar devuelve una página de filas vigentes. El total corresponde a todas
+// las filas que cumplen el filtro y la búsqueda, y la página devuelta queda
+// acotada al rango existente.
+func (r *TablaRepository) Listar(def models.TablaDef, opciones ListaOpciones) ([]map[string]string, int, int, error) {
+	condiciones := []string{"estado = 'V'"}
+	var args []interface{}
+	if opciones.FiltroColumna != "" {
+		args = append(args, opciones.FiltroValor)
+		condiciones = append(condiciones, fmt.Sprintf("%s = $%d", pq.QuoteIdentifier(opciones.FiltroColumna), len(args)))
+	}
+	if busqueda := strings.TrimSpace(opciones.Busqueda); busqueda != "" {
+		args = append(args, "%"+busqueda+"%")
+		indice := len(args)
+		var coincidencias []string
+		for _, c := range def.Campos {
+			columna := pq.QuoteIdentifier(def.Tabla) + "." + pq.QuoteIdentifier(c.Nombre)
+			coincidencias = append(coincidencias, fmt.Sprintf("COALESCE(%s::text, '') ILIKE $%d", columna, indice))
+			if c.Tipo == models.CampoReferencia && c.RefTabla != "" {
+				coincidencias = append(coincidencias, fmt.Sprintf(
+					"EXISTS (SELECT 1 FROM %s ref WHERE ref.%s = %s AND COALESCE(ref.%s::text, '') ILIKE $%d)",
+					pq.QuoteIdentifier(c.RefTabla),
+					pq.QuoteIdentifier(c.RefValor),
+					columna,
+					pq.QuoteIdentifier(c.RefEtiqueta),
+					indice,
+				))
+			}
+		}
+		condiciones = append(condiciones, "("+strings.Join(coincidencias, " OR ")+")")
+	}
+	where := strings.Join(condiciones, " AND ")
+
+	var total int
+	if err := r.db.QueryRow(fmt.Sprintf(
+		"SELECT COUNT(*) FROM %s WHERE %s",
+		pq.QuoteIdentifier(def.Tabla), where,
+	), args...).Scan(&total); err != nil {
+		return nil, 0, 1, err
+	}
+
+	porPagina := opciones.PorPagina
+	if porPagina <= 0 {
+		porPagina = 15
+	}
+	pagina, _ := normalizarPagina(total, porPagina, opciones.Pagina)
+
+	orden := ""
+	if opciones.OrdenColumna != "" {
+		if c, ok := def.Campo(opciones.OrdenColumna); ok {
+			if c.Tipo == models.CampoReferencia && c.RefTabla != "" {
+				orden = fmt.Sprintf(
+					"(SELECT ref.%s FROM %s ref WHERE ref.%s = %s.%s)",
+					pq.QuoteIdentifier(c.RefEtiqueta),
+					pq.QuoteIdentifier(c.RefTabla),
+					pq.QuoteIdentifier(c.RefValor),
+					pq.QuoteIdentifier(def.Tabla),
+					pq.QuoteIdentifier(c.Nombre),
+				)
+			} else {
+				orden = pq.QuoteIdentifier(def.Tabla) + "." + pq.QuoteIdentifier(c.Nombre)
+			}
+			if opciones.Ascendente {
+				orden += " ASC"
+			} else {
+				orden += " DESC"
+			}
+		}
+	}
+	if orden == "" && len(def.Orden) > 0 {
+		partes := make([]string, 0, len(def.Orden))
+		for _, c := range def.Orden {
+			partes = append(partes, pq.QuoteIdentifier(def.Tabla)+"."+pq.QuoteIdentifier(c))
+		}
+		orden = strings.Join(partes, ", ") + " ASC"
+	}
+
+	args = append(args, porPagina, (pagina-1)*porPagina)
+	query := fmt.Sprintf(
+		"SELECT %s FROM %s WHERE %s",
+		strings.Join(columnas(def.Campos), ", "),
+		pq.QuoteIdentifier(def.Tabla),
+		where,
+	)
+	if orden != "" {
+		query += " ORDER BY " + orden
+	}
+	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", len(args)-1, len(args))
+
+	filas, err := r.consultarSQL(query, args...)
+	if err != nil {
+		return nil, 0, pagina, err
+	}
+	return filas, total, pagina, nil
 }
 
 // Fila devuelve un registro vigente por su clave.

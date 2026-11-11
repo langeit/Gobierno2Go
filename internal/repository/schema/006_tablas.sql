@@ -59,18 +59,20 @@ CREATE TABLE IF NOT EXISTS tab_ciudad (
     estado VARCHAR(1) NOT NULL DEFAULT 'V'
 );
 
-CREATE TABLE IF NOT EXISTS tab_comuna (
-    codigo VARCHAR(4) PRIMARY KEY,
-    descripcion VARCHAR(20) NOT NULL,
-    codigo_region VARCHAR(4) NOT NULL REFERENCES tab_region(codigo),
-    estado VARCHAR(1) NOT NULL DEFAULT 'V'
-);
-
 -- El párrafo de provincia copia el de ciudades: el código queda en 5 y la descripción en 50.
 CREATE TABLE IF NOT EXISTS tab_provincia (
     codigo VARCHAR(5) PRIMARY KEY,
     descripcion VARCHAR(50) NOT NULL,
     codigo_region VARCHAR(4) NOT NULL REFERENCES tab_region(codigo),
+    estado VARCHAR(1) NOT NULL DEFAULT 'V'
+);
+
+-- Las comunas usan el CUT de 5 dígitos y se relacionan con su provincia.
+CREATE TABLE IF NOT EXISTS tab_comuna (
+    codigo VARCHAR(5) PRIMARY KEY,
+    descripcion VARCHAR(50) NOT NULL,
+    codigo_region VARCHAR(4) NOT NULL REFERENCES tab_region(codigo),
+    codigo_provincia VARCHAR(5) NOT NULL REFERENCES tab_provincia(codigo),
     estado VARCHAR(1) NOT NULL DEFAULT 'V'
 );
 
@@ -264,6 +266,10 @@ ALTER TABLE tab_atributos ADD COLUMN IF NOT EXISTS estado VARCHAR(1) NOT NULL DE
 ALTER TABLE tab_ine ADD COLUMN IF NOT EXISTS estado VARCHAR(1) NOT NULL DEFAULT 'V';
 ALTER TABLE tab_ciudad ADD COLUMN IF NOT EXISTS estado VARCHAR(1) NOT NULL DEFAULT 'V';
 ALTER TABLE tab_comuna ADD COLUMN IF NOT EXISTS estado VARCHAR(1) NOT NULL DEFAULT 'V';
+ALTER TABLE tab_comuna ALTER COLUMN codigo TYPE VARCHAR(5);
+ALTER TABLE tab_comuna ALTER COLUMN descripcion TYPE VARCHAR(50);
+ALTER TABLE tab_comuna ADD COLUMN IF NOT EXISTS codigo_provincia VARCHAR(5) REFERENCES tab_provincia(codigo);
+ALTER TABLE tab_comuna ALTER COLUMN codigo_provincia SET NOT NULL;
 ALTER TABLE tab_provincia ADD COLUMN IF NOT EXISTS estado VARCHAR(1) NOT NULL DEFAULT 'V';
 ALTER TABLE tab_tipos_eventos ADD COLUMN IF NOT EXISTS estado VARCHAR(1) NOT NULL DEFAULT 'V';
 ALTER TABLE tab_estudios_superiores ADD COLUMN IF NOT EXISTS estado VARCHAR(1) NOT NULL DEFAULT 'V';

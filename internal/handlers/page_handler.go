@@ -25,7 +25,9 @@ func (h *PageHandler) LoginPage(w http.ResponseWriter, r *http.Request) {
 
 func (h *PageHandler) DashboardPage(w http.ResponseWriter, r *http.Request) {
 	data := pageData(r)
-	data["Opciones"] = OpcionesTablas()
+	if info, ok := session.FromContext(r.Context()); ok {
+		data["Opciones"] = OpcionesTablasPara(info)
+	}
 	switch r.URL.Query().Get("ok") {
 	case "sinpermiso":
 		data["Error"] = "No tiene acceso a ese módulo."
